@@ -227,15 +227,20 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
             left: 0,
             top: 0,
             bottom: 0,
-            width: 6,
+            width: 16,
             background: 'var(--border)',
             cursor: 'pointer',
             transition: 'background 0.2s',
             zIndex: 100,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
           }}
           onMouseEnter={e => (e.currentTarget.style.background = '#e02020')}
           onMouseLeave={e => (e.currentTarget.style.background = 'var(--border)')}
-        />
+        >
+          <span style={{ fontSize: 12, color: 'var(--text3)', lineHeight: 1, userSelect: 'none' }}>›</span>
+        </div>
       )}
 
       <nav className={`sidebar${sidebarOpen ? '' : ' closed'}`}>
@@ -266,47 +271,53 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         </div>
 
         {/* User info + avatar */}
-        <div style={{ padding: '10px 6px 0', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 6 }}>
+        <div style={{ borderTop: '1px solid var(--border)', marginTop: 'auto' }}>
+          {/* Klikatelný blok → nastavení */}
           <div
             onClick={() => router.push('/app/settings')}
-            style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 0, cursor: 'pointer', borderRadius: 6, padding: '2px 4px', transition: 'background 0.15s' }}
-            onMouseEnter={e => (e.currentTarget.style.background = 'var(--border)')}
+            style={{ display: 'flex', flexDirection: 'column', gap: 4, padding: 12, cursor: 'pointer', borderRadius: 8, transition: 'background 0.15s', margin: '4px 4px 0' }}
+            onMouseEnter={e => (e.currentTarget.style.background = 'var(--card)')}
             onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
           >
-            {avatarUrl ? (
-              <img
-                src={avatarUrl}
-                alt="avatar"
-                style={{ width: 32, height: 32, borderRadius: '50%', objectFit: 'cover', flexShrink: 0, border: '1px solid var(--border)' }}
-              />
-            ) : (
-              <div style={{
-                width: 32, height: 32, borderRadius: '50%', background: '#e02020',
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                fontSize: 11, color: '#fff', fontWeight: 700, flexShrink: 0,
-              }}>
-                {initials}
+            {/* Řádek 1: Avatar + Jméno + Theme toggle */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              {avatarUrl ? (
+                <img src={avatarUrl} alt="avatar"
+                  style={{ width: 32, height: 32, borderRadius: '50%', objectFit: 'cover', flexShrink: 0, border: '1px solid var(--border)' }} />
+              ) : (
+                <div style={{
+                  width: 32, height: 32, borderRadius: '50%', background: '#e02020', flexShrink: 0,
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  fontSize: 12, color: '#fff', fontWeight: 700,
+                }}>
+                  {initials}
+                </div>
+              )}
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--text)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                  {displayName}
+                </div>
+              </div>
+              {/* Theme toggle – zastaví propagaci kliknutí na settings */}
+              <button
+                onClick={e => { e.stopPropagation(); toggleTheme() }}
+                title={theme === 'dark' ? 'Světlý režim' : 'Tmavý režim'}
+                style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 12, lineHeight: 1, padding: '2px 4px', borderRadius: 4, color: 'var(--text3)', whiteSpace: 'nowrap', flexShrink: 0 }}
+              >
+                {sidebarOpen
+                  ? (theme === 'dark' ? '☀️ Světlý' : '🌙 Tmavý')
+                  : (theme === 'dark' ? '☀️' : '🌙')}
+              </button>
+            </div>
+            {/* Řádek 2: Role badge */}
+            {role && (
+              <div style={{ fontSize: 11, color: 'var(--text3)', paddingLeft: 40 }}>
+                {ROLE_LABELS[role]}
               </div>
             )}
-            <div style={{ minWidth: 0 }}>
-              <div style={{ fontSize: 11, color: 'var(--text3)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                {displayName}
-              </div>
-              {role && (
-                <div style={{ fontSize: 10, color: 'var(--text3)', opacity: 0.7 }}>{ROLE_LABELS[role]}</div>
-              )}
-            </div>
           </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 4, flexShrink: 0 }}>
-            <button
-              onClick={toggleTheme}
-              title={theme === 'dark' ? 'Světlý režim' : 'Tmavý režim'}
-              style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 12, lineHeight: 1, padding: '2px 4px', borderRadius: 4, color: 'var(--text3)', whiteSpace: 'nowrap' }}
-            >
-              {sidebarOpen
-                ? (theme === 'dark' ? '☀️ Světlý' : '🌙 Tmavý')
-                : (theme === 'dark' ? '☀️' : '🌙')}
-            </button>
+          {/* Řádek 3: Odhlásit */}
+          <div style={{ padding: '4px 12px 10px', display: 'flex', alignItems: 'center' }}>
             <button className="btn btn-ghost btn-xs"
               onClick={async () => { await supabase.auth.signOut(); router.replace('/login') }}>
               Odhlásit

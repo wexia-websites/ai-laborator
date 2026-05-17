@@ -257,8 +257,12 @@ export default function SettingsPage() {
             </div>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16, marginTop: 16, paddingTop: 16, borderTop: '1px solid var(--border)' }}>
               <div>
-                <div style={{ fontSize: 13, color: 'var(--text)', marginBottom: 2 }}>Světlý režim</div>
-                <div style={{ fontSize: 12, color: 'var(--text3)' }}>Přepnout na světlé téma aplikace</div>
+                <div style={{ fontSize: 13, color: 'var(--text)', marginBottom: 2 }}>
+                  {lightMode ? 'Světlý režim je zapnutý' : 'Tmavý režim je zapnutý'}
+                </div>
+                <div style={{ fontSize: 12, color: 'var(--text3)' }}>
+                  {lightMode ? 'Přepnout na tmavý režim' : 'Přepnout na světlý režim'}
+                </div>
               </div>
               {toggleSwitch(lightMode, () => toggleLightMode(!lightMode))}
             </div>
