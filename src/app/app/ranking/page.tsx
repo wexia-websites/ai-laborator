@@ -98,7 +98,7 @@ export default function RankingPage() {
       .from('use_cases')
       .select('*')
       .in('status', ['published', 'review'])
-      .then(({ data }) => {
+      .then(({ data }: any) => {
         setUsecases(data ?? [])
         setLoading(false)
       })

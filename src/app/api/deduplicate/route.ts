@@ -1,10 +1,5 @@
 import { NextResponse } from 'next/server'
-import { createClient } from '@supabase/supabase-js'
-
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-)
+import { supabase } from '@/lib/supabase'
 
 function isSimilar(a: string, b: string): boolean {
   const na = a.toLowerCase().trim()
@@ -33,7 +28,7 @@ export async function POST() {
 
     for (const tool of tools) {
       const isDuplicate = Array.from(keep).some(keptId => {
-        const kept = tools.find(t => t.id === keptId)!
+        const kept = tools.find((t: { id: string }) => t.id === keptId)!
         return isSimilar(kept.name, tool.name)
       })
 

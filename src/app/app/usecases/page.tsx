@@ -51,7 +51,7 @@ function UseCasesContent() {
 
   const load = () => {
     supabase.from('use_cases').select('*').order('created_at', { ascending: false })
-      .then(({ data }) => setUsecases(data ?? []))
+      .then(({ data }: any) => setUsecases(data ?? []))
   }
 
   useEffect(() => { load() }, [])  // eslint-disable-line react-hooks/exhaustive-deps

@@ -1,0 +1,8 @@
+{
+  "crons": [
+    {
+      "path": "/api/ai-watch/run",
+      "schedule": "0 5 * * *"
+    }
+  ]
+}

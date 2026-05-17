@@ -69,7 +69,7 @@ export default function ProjectsPage() {
 
   const load = () => {
     supabase.from('projects').select('*').order('created_at', { ascending: false })
-      .then(({ data }) => setProjects((data ?? []) as Project[]))
+      .then(({ data }: any) => setProjects((data ?? []) as Project[]))
   }
 
   useEffect(() => { load() }, [])  // eslint-disable-line react-hooks/exhaustive-deps

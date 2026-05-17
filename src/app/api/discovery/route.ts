@@ -1,12 +1,8 @@
 import { NextResponse } from 'next/server'
 import Anthropic from '@anthropic-ai/sdk'
-import { createClient } from '@supabase/supabase-js'
+import { supabase } from '@/lib/supabase'
 
 const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-)
 
 type DiscoveredTool = {
   name: string
@@ -33,7 +29,7 @@ export async function POST() {
 
     // 1. Load existing tools from DB
     const { data: existing } = await supabase.from('tools').select('name')
-    const existingNames = existing?.map(t => t.name.toLowerCase()) || []
+    const existingNames = existing?.map((t: { name: string }) => t.name.toLowerCase()) || []
 
     // 2. Tavily search for new AI tools — randomize query to get variety
     const queries = [
@@ -113,7 +109,7 @@ Format: [{"name":"...","vendor":"...","description":"...","tags":["..."],"url":"
     for (const tool of discovered) {
       if (!tool.name) continue
 
-      const alreadyExists = existingNames.some(n => isDuplicate(n, tool.name))
+      const alreadyExists = existingNames.some((n: string) => isDuplicate(n, tool.name))
       if (alreadyExists) continue
 
       console.log('Ukládám nástroj:', tool.name)

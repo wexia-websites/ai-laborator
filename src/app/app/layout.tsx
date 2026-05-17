@@ -19,11 +19,14 @@ const NAV_SECTIONS: NavSection[] = [
   {
     heading: 'AI NÁSTROJE',
     items: [
-      { id: 'inbox',      label: 'Inbox nástrojů', icon: '⊹', href: '/app/inbox' },
-      { id: 'claimboard', label: 'Claim board',    icon: '✎', href: '/app/claimboard' },
-      { id: 'usecases',   label: 'Use casy',       icon: '⧉', href: '/app/usecases' },
-      { id: 'revision',   label: 'Revize',         icon: '↺', href: '/app/usecases?tab=revize' },
-      { id: 'ranking',    label: 'Žebříček',       icon: '⊟', href: '/app/ranking' },
+      { id: 'inbox',         label: 'K otestování',    icon: '⊹', href: '/app/inbox' },
+      { id: 'verify',        label: 'Verifikace',      icon: '⚐', href: '/app/verify' },
+      { id: 'tools-tested',  label: 'Otestované',      icon: '✦', href: '/app/tools-tested' },
+      { id: 'ai-watch',      label: 'AI News feed',    icon: '◌', href: '/app/ai-watch' },
+      { id: 'claimboard',    label: 'Claim board',     icon: '✎', href: '/app/claimboard' },
+      { id: 'usecases',      label: 'Use casy',        icon: '⧉', href: '/app/usecases' },
+      { id: 'revision',      label: 'Revize',          icon: '↺', href: '/app/usecases?tab=revize' },
+      { id: 'ranking',       label: 'Žebříček',        icon: '⊟', href: '/app/ranking' },
     ],
   },
   {
@@ -96,7 +99,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   }
 
   useEffect(() => {
-    supabase.auth.getSession().then(async ({ data: { session } }) => {
+    supabase.auth.getSession().then(async ({ data: { session } }: any) => {
       if (!session) { router.replace('/login'); return }
       setUser(session.user)
 
@@ -114,7 +117,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
       setLoading(false)
       checkRevisions()
     })
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_: any, session: any) => {
       if (!session) router.replace('/login')
       else setUser(session.user)
     })

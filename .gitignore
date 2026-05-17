@@ -5,3 +5,11 @@ node_modules/
 *.env
 .claude/
 CLAUDE_CONTEXT.md
+tsconfig.tsbuildinfo
+data/ai-watch/*.json
+data/ai-watch/*.tmp
+
+# secrets / leftovers
+.env.old
+.env.local.backup*
+*.rar

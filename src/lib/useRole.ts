@@ -7,17 +7,20 @@ export type Role = 'super_admin' | 'admin' | 'analyst' | 'viewer'
 export const SUPER_ADMIN_EMAIL = 'katzithebeast@gmail.com'
 
 const PERMISSIONS: Record<string, Role[]> = {
-  chat:       ['admin', 'analyst', 'viewer'],
-  dashboard:  ['admin', 'analyst'],
-  inbox:      ['admin', 'analyst'],
-  claimboard: ['admin', 'analyst'],
-  usecases:   ['admin', 'analyst', 'viewer'],
-  revision:   ['admin'],
-  projects:   ['admin', 'analyst'],
-  ranking:    ['admin', 'analyst', 'viewer'],
-  review:     ['admin'],
-  settings:   ['admin'],
-  admin:      [],
+  chat:          ['admin', 'analyst', 'viewer'],
+  dashboard:     ['admin', 'analyst'],
+  inbox:         ['admin', 'analyst'],
+  'ai-watch':    ['admin', 'analyst'],
+  claimboard:    ['admin', 'analyst'],
+  verify:        ['admin'],
+  'tools-tested':['admin'],
+  usecases:      ['admin', 'analyst', 'viewer'],
+  revision:      ['admin'],
+  projects:      ['admin', 'analyst'],
+  ranking:       ['admin', 'analyst', 'viewer'],
+  review:        ['admin'],
+  settings:      ['admin'],
+  admin:         [],
 }
 
 export function useRole() {
@@ -26,7 +29,7 @@ export function useRole() {
   const [email, setEmail] = useState<string | null>(null)
 
   useEffect(() => {
-    supabase.auth.getUser().then(({ data: { user } }) => {
+    supabase.auth.getUser().then(({ data: { user } }: any) => {
       if (!user) { setLoading(false); return }
       setEmail(user.email || null)
 
@@ -40,7 +43,7 @@ export function useRole() {
         .select('role')
         .eq('id', user.id)
         .single()
-        .then(({ data }) => {
+        .then(({ data }: any) => {
           setRole((data?.role as Role) || 'viewer')
           setLoading(false)
         })
