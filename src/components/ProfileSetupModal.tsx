@@ -3,22 +3,26 @@ import { useState, useRef } from 'react'
 import { supabase } from '@/lib/supabase'
 
 export const AVATARS = [
-  { seed: 'Felix',   name: 'Kočka',      emoji: '🐱' },
-  { seed: 'Buddy',   name: 'Pes',        emoji: '🐶' },
-  { seed: 'Max',     name: 'Medvěd',     emoji: '🐻' },
-  { seed: 'Luna',    name: 'Liška',      emoji: '🦊' },
-  { seed: 'Charlie', name: 'Králík',     emoji: '🐰' },
-  { seed: 'Milo',    name: 'Tučňák',     emoji: '🐧' },
-  { seed: 'Bella',   name: 'Panda',      emoji: '🐼' },
-  { seed: 'Rocky',   name: 'Lev',        emoji: '🦁' },
-  { seed: 'Daisy',   name: 'Koala',      emoji: '🐨' },
-  { seed: 'Cleo',    name: 'Žirafa',     emoji: '🦒' },
-  { seed: 'Leo',     name: 'Slon',       emoji: '🐘' },
-  { seed: 'Zara',    name: 'Jednorožec', emoji: '🦄' },
+  { emoji: '🐱', name: 'Kočka',      color: '#FF6B6B' },
+  { emoji: '🐶', name: 'Pes',        color: '#4ECDC4' },
+  { emoji: '🐻', name: 'Medvěd',     color: '#45B7D1' },
+  { emoji: '🦊', name: 'Liška',      color: '#FFA07A' },
+  { emoji: '🐰', name: 'Králík',     color: '#98D8C8' },
+  { emoji: '🐧', name: 'Tučňák',     color: '#7B68EE' },
+  { emoji: '🐼', name: 'Panda',      color: '#95E1D3' },
+  { emoji: '🦁', name: 'Lev',        color: '#F8B500' },
+  { emoji: '🐨', name: 'Koala',      color: '#A8D8EA' },
+  { emoji: '🦒', name: 'Žirafa',     color: '#FFDAB9' },
+  { emoji: '🐘', name: 'Slon',       color: '#B0C4DE' },
+  { emoji: '🦄', name: 'Jednorožec', color: '#DDA0DD' },
 ]
 
-export function dicebearUrl(seed: string) {
-  return `https://api.dicebear.com/7.x/fun-emoji/svg?seed=${seed}`
+export function getAvatarColor(emoji: string): string {
+  return AVATARS.find(a => a.emoji === emoji)?.color ?? '#888'
+}
+
+export function isCustomAvatar(url: string): boolean {
+  return url.startsWith('data:') || url.startsWith('http')
 }
 
 interface Props {
@@ -27,7 +31,7 @@ interface Props {
 }
 
 export default function ProfileSetupModal({ userId, onComplete }: Props) {
-  const [selectedSeed, setSelectedSeed] = useState<string | null>(null)
+  const [selectedEmoji, setSelectedEmoji] = useState<string | null>(null)
   const [customAvatarUrl, setCustomAvatarUrl] = useState<string | null>(null)
   const [firstName, setFirstName] = useState('')
   const [lastName, setLastName] = useState('')
@@ -47,12 +51,12 @@ export default function ProfileSetupModal({ userId, onComplete }: Props) {
     const reader = new FileReader()
     reader.onload = () => {
       setCustomAvatarUrl(reader.result as string)
-      setSelectedSeed(null)
+      setSelectedEmoji(null)
     }
     reader.readAsDataURL(file)
   }
 
-  const avatarUrl = customAvatarUrl ?? (selectedSeed ? dicebearUrl(selectedSeed) : null)
+  const avatarUrl = customAvatarUrl ?? selectedEmoji ?? null
 
   const clearError = (field: string) => setErrors(p => ({ ...p, [field]: '' }))
 
@@ -134,36 +138,46 @@ export default function ProfileSetupModal({ userId, onComplete }: Props) {
 
         {customAvatarUrl ? (
           <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 12 }}>
-            <img src={customAvatarUrl} alt="avatar" style={{ width: 64, height: 64, borderRadius: '50%', objectFit: 'cover', border: '2px solid var(--accent, #e02020)' }} />
+            <img src={customAvatarUrl} alt="avatar" style={{ width: 64, height: 64, borderRadius: '50%', objectFit: 'cover', border: '2px solid #e02020' }} />
             <div>
               <div style={{ fontSize: 13, color: 'var(--text)', marginBottom: 6 }}>Vlastní foto nahráno</div>
               <button className="btn btn-ghost btn-sm" onClick={() => setCustomAvatarUrl(null)}>Zrušit</button>
             </div>
           </div>
         ) : (
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', gap: 8, marginBottom: 12 }}>
-            {AVATARS.map(a => (
-              <button
-                key={a.seed}
-                onClick={() => setSelectedSeed(a.seed)}
-                title={`${a.emoji} ${a.name}`}
-                style={{
-                  border: `2px solid ${selectedSeed === a.seed ? '#e02020' : 'var(--border)'}`,
-                  borderRadius: 8,
-                  background: selectedSeed === a.seed ? 'rgba(224,32,32,0.08)' : 'transparent',
-                  padding: 6,
-                  cursor: 'pointer',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  alignItems: 'center',
-                  gap: 4,
-                  transition: 'border-color 0.15s, background 0.15s',
-                }}
-              >
-                <img src={dicebearUrl(a.seed)} alt={a.name} width={40} height={40} style={{ borderRadius: 4 }} />
-                <span style={{ fontSize: 10, color: 'var(--text3)' }}>{a.emoji}</span>
-              </button>
-            ))}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', gap: 10, marginBottom: 12 }}>
+            {AVATARS.map(a => {
+              const selected = selectedEmoji === a.emoji
+              return (
+                <button
+                  key={a.emoji}
+                  onClick={() => setSelectedEmoji(a.emoji)}
+                  title={a.name}
+                  style={{
+                    border: `2px solid ${selected ? a.color : 'var(--border)'}`,
+                    borderRadius: 12,
+                    background: selected ? a.color + '22' : 'transparent',
+                    padding: 6,
+                    cursor: 'pointer',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    gap: 4,
+                    transition: 'border-color 0.15s, background 0.15s',
+                  }}
+                >
+                  <div style={{
+                    width: 48, height: 48, borderRadius: '50%',
+                    background: a.color + '33',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    fontSize: '1.8rem',
+                  }}>
+                    {a.emoji}
+                  </div>
+                  <span style={{ fontSize: 10, color: 'var(--text3)', whiteSpace: 'nowrap' }}>{a.name}</span>
+                </button>
+              )
+            })}
           </div>
         )}
 

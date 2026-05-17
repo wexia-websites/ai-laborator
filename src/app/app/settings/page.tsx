@@ -7,7 +7,7 @@ import { AVATARS, dicebearUrl } from '@/components/ProfileSetupModal'
 
 export default function SettingsPage() {
   const router = useRouter()
-  const { canAccess, loading: roleLoading } = useRole()
+  const { canAccess, canEdit, loading: roleLoading } = useRole()
   useEffect(() => {
     if (!roleLoading && !canAccess('settings')) router.push('/app/chat')
   }, [roleLoading, canAccess, router])
@@ -258,21 +258,23 @@ export default function SettingsPage() {
             </div>
           </div>
 
-          {/* REVIZE */}
-          <div className="card">
-            <h3 style={{ fontSize: 14, fontWeight: 600, marginBottom: 14 }}>Revizní systém</h3>
-            <p style={{ fontSize: 12, color: 'var(--text3)', marginBottom: 14 }}>
-              Každý publikovaný use case dostane datum revize. Po uplynutí intervalu se zobrazí v záložce Revize.
-            </p>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 14 }}>
-              <label className="form-label" style={{ margin: 0, whiteSpace: 'nowrap' }}>Revize každých</label>
-              <input type="number" className="form-input" min={7} max={365} value={revisionDays} onChange={e => setRevisionDays(Number(e.target.value))} style={{ width: 80 }} />
-              <span style={{ fontSize: 13, color: 'var(--text2)' }}>dní</span>
+          {/* REVIZE – pouze pro admin+ */}
+          {canEdit() && (
+            <div className="card">
+              <h3 style={{ fontSize: 14, fontWeight: 600, marginBottom: 14 }}>Revizní systém</h3>
+              <p style={{ fontSize: 12, color: 'var(--text3)', marginBottom: 14 }}>
+                Každý publikovaný use case dostane datum revize. Po uplynutí intervalu se zobrazí v záložce Revize.
+              </p>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 14 }}>
+                <label className="form-label" style={{ margin: 0, whiteSpace: 'nowrap' }}>Revize každých</label>
+                <input type="number" className="form-input" min={7} max={365} value={revisionDays} onChange={e => setRevisionDays(Number(e.target.value))} style={{ width: 80 }} />
+                <span style={{ fontSize: 13, color: 'var(--text2)' }}>dní</span>
+              </div>
+              <button className="btn btn-primary btn-sm" onClick={saveRevisionDays}>
+                {revisionSaved ? '✓ Uloženo' : 'Uložit'}
+              </button>
             </div>
-            <button className="btn btn-primary btn-sm" onClick={saveRevisionDays}>
-              {revisionSaved ? '✓ Uloženo' : 'Uložit'}
-            </button>
-          </div>
+          )}
 
           {/* O APLIKACI */}
           <div className="card">

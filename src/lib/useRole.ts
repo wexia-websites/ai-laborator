@@ -19,7 +19,7 @@ const PERMISSIONS: Record<string, Role[]> = {
   projects:      ['admin', 'analyst'],
   ranking:       ['admin', 'analyst', 'viewer'],
   review:        ['admin'],
-  settings:      ['admin'],
+  settings:      ['admin', 'analyst', 'viewer'],
   admin:         [],
 }
 
