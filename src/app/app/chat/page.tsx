@@ -61,7 +61,7 @@ function ChatPageInner() {
   const [saved, setSaved] = useState(false)
   const [saving, setSaving] = useState(false)
   const [saveSuccess, setSaveSuccess] = useState(false)
-  const [toast, setToast] = useState('')
+  const [toast] = useState('')
   const [attachment, setAttachment] = useState<Attachment | null>(null)
   const [mode, setMode] = useState<'chat' | 'project'>('chat')
   const [dbIndicator, setDbIndicator] = useState<Record<number, number>>({})
@@ -75,9 +75,25 @@ function ChatPageInner() {
   const endRef = useRef<HTMLDivElement>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
+  const historyRef = useRef<HTMLDivElement>(null)
+  const historyBtnRef = useRef<HTMLButtonElement>(null)
+  const abortControllerRef = useRef<AbortController | null>(null)
 
   useEffect(() => { endRef.current?.scrollIntoView({ behavior: 'smooth' }) }, [messages, loading])
   useEffect(() => { loadSessions() }, [])
+
+  // Close history panel on click outside
+  useEffect(() => {
+    if (!historyOpen) return
+    const handle = (e: MouseEvent) => {
+      if (
+        historyRef.current && !historyRef.current.contains(e.target as Node) &&
+        historyBtnRef.current && !historyBtnRef.current.contains(e.target as Node)
+      ) setHistoryOpen(false)
+    }
+    document.addEventListener('mousedown', handle)
+    return () => document.removeEventListener('mousedown', handle)
+  }, [historyOpen])
   useEffect(() => {
     if (!input && textareaRef.current) textareaRef.current.style.height = '48px'
   }, [input])
@@ -147,6 +163,7 @@ function ChatPageInner() {
     setTitleGenerated(false)
     sessionStorage.removeItem('chat_session_id')
     sessionStorage.removeItem('chat_messages')
+    abortControllerRef.current?.abort()
   }
 
   const openSession = (s: Session) => {
@@ -212,7 +229,6 @@ function ChatPageInner() {
     setLoading(true)
 
     let currentSessionId = sessionId
-    let isNewSession = false
     if (!currentSessionId) {
       const { data: { user } } = await supabase.auth.getUser()
       const title = (userText || attachment?.name || 'Chat').slice(0, 50)
@@ -221,12 +237,14 @@ function ChatPageInner() {
         .insert({ user_id: user?.id, title, messages: next })
         .select('id')
         .single()
-      if (data) { currentSessionId = data.id; setSessionId(data.id); isNewSession = true; loadSessions() }
+      if (data) { currentSessionId = data.id; setSessionId(data.id); loadSessions() }
     }
 
     try {
+      abortControllerRef.current = new AbortController()
       const res = await fetch('/api/chat-db', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
+        signal: abortControllerRef.current.signal,
         body: JSON.stringify({ messages: apiMessages, mode: overrideMode ?? mode })
       })
       const data = await res.json()
@@ -264,7 +282,8 @@ function ChatPageInner() {
           }
         }).catch(() => {/* noop */})
       }
-    } catch {
+    } catch (err) {
+      if ((err as Error).name === 'AbortError') return
       setMessages([...next, { role: 'assistant', content: '⚠️ Chyba AI. Zkontroluj API klíč na Vercelu.' }])
     } finally { setLoading(false) }
   }
@@ -281,13 +300,10 @@ function ChatPageInner() {
         body: JSON.stringify({ messages })
       })
       const data = await res.json()
-      console.log('Extracted data:', data)
-
       if (data.error) throw new Error(data.error)
 
       // 2. Získej přihlášeného uživatele
-      const { data: { user }, error: userError } = await supabase.auth.getUser()
-      console.log('User:', user, userError)
+      const { data: { user } } = await supabase.auth.getUser()
 
       if (!user) throw new Error('Nejsi přihlášen')
 
@@ -307,8 +323,6 @@ function ChatPageInner() {
         .select()
         .single()
 
-      console.log('Insert result:', inserted, insertError)
-
       if (insertError) throw insertError
 
       setSaved(true)
@@ -321,11 +335,6 @@ function ChatPageInner() {
     } finally {
       setSaving(false)
     }
-  }
-
-  const showToast = (msg: string) => {
-    setToast(msg)
-    setTimeout(() => setToast(''), 3000)
   }
 
   const formatDate = (iso: string) => {
@@ -350,6 +359,7 @@ function ChatPageInner() {
           borderBottom: '1px solid var(--border)',
         }}>
           <button
+            ref={historyBtnRef}
             onClick={() => setHistoryOpen(o => !o)}
             style={{
               background: 'transparent', border: 'none', cursor: 'pointer',
@@ -378,19 +388,19 @@ function ChatPageInner() {
           </button>
         </div>
 
-        {/* PANEL HISTORIE — absolutní překryv vlevo */}
+        {/* BODY: history sidebar + chat content */}
+        <div style={{ display: 'flex', flex: 1, overflow: 'hidden' }}>
+
+        {/* PANEL HISTORIE — inline sidebar, nepřekrývá obsah */}
         {historyOpen && (
-          <div style={{
-            position: 'absolute', top: 48, left: 0, bottom: 0,
-            width: 260, background: 'var(--surface2)',
+          <div ref={historyRef} style={{
+            width: 260, flexShrink: 0,
+            background: 'var(--surface2)',
             borderRight: '1px solid var(--border)',
             display: 'flex', flexDirection: 'column',
-            padding: '12px 10px', gap: 3, zIndex: 20,
+            padding: '12px 10px', gap: 3,
             overflowY: 'auto',
           }}>
-            <div style={{ fontSize: 10, fontWeight: 600, color: 'var(--text3)', textTransform: 'uppercase', letterSpacing: '0.7px', marginBottom: 6, paddingLeft: 4 }}>
-              Historie
-            </div>
             {sessions.length === 0 && (
               <div style={{ fontSize: 12, color: 'var(--text3)', textAlign: 'center', paddingTop: 20 }}>Žádné chaty zatím</div>
             )}
@@ -453,6 +463,9 @@ function ChatPageInner() {
             ))}
           </div>
         )}
+
+        {/* CONTENT sloupec: zprávy + input */}
+        <div style={{ display: 'flex', flexDirection: 'column', flex: 1, overflow: 'hidden' }}>
 
         {/* ZPRÁVY */}
         <div style={{ flex: 1, overflowY: 'auto', padding: '0 20px', display: 'flex', flexDirection: 'column' }}>
@@ -612,12 +625,15 @@ function ChatPageInner() {
             </div>
           </div>
         </div>
+
+        </div>{/* /CONTENT sloupec */}
+        </div>{/* /BODY */}
       </div>
 
       <input ref={fileInputRef} type="file" style={{ display: 'none' }}
         accept=".jpg,.jpeg,.png,.gif,.webp,.pdf,.doc,.docx,.xls,.xlsx,.txt,.csv"
         onChange={handleFile} />
-      <div className={`toast ${toast ? 'show' : ''}`}>{toast}</div>
+      {toast && <div className="toast show">{toast}</div>}
       {hoveredId && (
         <div style={{
           position: 'fixed', left: tooltipPos.x, top: tooltipPos.y,

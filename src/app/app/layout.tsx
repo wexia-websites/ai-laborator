@@ -25,7 +25,7 @@ const NAV_SECTIONS: NavSection[] = [
       { id: 'ai-watch',      label: 'AI News feed',    icon: '◌', href: '/app/ai-watch' },
       { id: 'claimboard',    label: 'Claim board',     icon: '✎', href: '/app/claimboard' },
       { id: 'usecases',      label: 'Use casy',        icon: '⧉', href: '/app/usecases' },
-      { id: 'revision',      label: 'Revize',          icon: '↺', href: '/app/usecases?tab=revize' },
+      { id: 'revision',      label: 'Revize',          icon: '↺', href: '/app/revision' },
       { id: 'ranking',       label: 'Žebříček',        icon: '⊟', href: '/app/ranking' },
     ],
   },
@@ -152,9 +152,10 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     items: section.items.filter(n => canAccess(n.id)),
   })).filter(s => s.items.length > 0)
 
-  const activeId = ALL_NAV_ITEMS.find(n =>
-    pathname === n.href || (n.href !== '/app' && !n.href.includes('?') && pathname.startsWith(n.href))
-  )?.id ?? 'dashboard'
+  const activeId = ALL_NAV_ITEMS.find(n => {
+    const hrefPath = n.href.split('?')[0]
+    return pathname === hrefPath || (hrefPath !== '/app' && pathname.startsWith(hrefPath))
+  })?.id ?? 'dashboard'
 
   const navHeadingStyle: React.CSSProperties = {
     fontSize: 10,
