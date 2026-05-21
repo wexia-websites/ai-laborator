@@ -1747,3 +1747,64 @@ body {
   .uc-metrics { grid-template-columns: 1fr 1fr; }
   .uc-highlights { grid-template-columns: 1fr; }
 }
+
+/* ── MY WORK ── */
+.mw-status-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 9px;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.2px;
+}
+.mw-tab-count-nonzero { background: rgba(224,32,32,0.12); color: var(--accent); }
+.mw-groups { display: flex; flex-direction: column; gap: 28px; }
+.mw-group {}
+.mw-group-heading {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  color: var(--text3);
+  margin-bottom: 10px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--border);
+}
+.mw-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.mw-tool-card { margin-bottom: 8px; }
+.mw-review-card { border-left: 2px solid #f59e0b; }
+.mw-returned-card { border-left: 2px solid #ef4444; }
+.mw-returned-reason {
+  font-size: 13px;
+  color: #ef4444;
+  margin-top: 6px;
+  padding: 8px 10px;
+  background: rgba(239,68,68,0.07);
+  border-radius: 6px;
+  line-height: 1.5;
+}
+.mw-info-banner {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  border-radius: 8px;
+  background: rgba(180,83,9,0.08);
+  border: 1px solid rgba(245,158,11,0.2);
+  color: var(--text2);
+  font-size: 13px;
+  margin-bottom: 16px;
+}
+.mw-info-banner-red {
+  background: rgba(239,68,68,0.07);
+  border-color: rgba(239,68,68,0.2);
+}

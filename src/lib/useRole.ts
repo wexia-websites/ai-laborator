@@ -12,6 +12,7 @@ const PERMISSIONS: Record<string, Role[]> = {
   inbox:         ['admin', 'analyst'],
   'ai-watch':    ['admin', 'analyst'],
   claimboard:    ['admin', 'analyst'],
+  'my-work':     ['admin', 'analyst'],
   verify:        ['admin'],
   'tools-tested':['admin'],
   usecases:      ['admin', 'analyst', 'viewer'],

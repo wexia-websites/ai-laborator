@@ -23,7 +23,7 @@ const NAV_SECTIONS: NavSection[] = [
       { id: 'verify',        label: 'Verifikace',      icon: '⚐', href: '/app/verify' },
       { id: 'tools-tested',  label: 'Otestované',      icon: '✦', href: '/app/tools-tested' },
       { id: 'ai-watch',      label: 'AI News feed',    icon: '◌', href: '/app/ai-watch' },
-      { id: 'claimboard',    label: 'Claim board',     icon: '✎', href: '/app/claimboard' },
+      { id: 'my-work',       label: 'Moje práce',      icon: '📋', href: '/app/my-work' },
       { id: 'usecases',      label: 'Use casy',        icon: '⧉', href: '/app/usecases' },
       { id: 'revision',      label: 'Revize',          icon: '↺', href: '/app/revision' },
       { id: 'ranking',       label: 'Žebříček',        icon: '⊟', href: '/app/ranking' },
