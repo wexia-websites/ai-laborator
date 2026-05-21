@@ -109,6 +109,58 @@ export default function MyWorkPage() {
       </div>
 
       <div className="page-body">
+        {/* Stat cards */}
+        <div className="stats-row" style={{ marginBottom: 24 }}>
+          <div
+            className="stat-card"
+            style={{ cursor: 'pointer', outline: tab === 'testing' ? '1px solid var(--accent)' : 'none' }}
+            onClick={() => setTab('testing')}
+          >
+            <div className="stat-label">Testování</div>
+            <div className="stat-value">{tools.length}</div>
+            <div className="stat-sub">aktivní</div>
+          </div>
+          <div
+            className="stat-card"
+            style={{ cursor: 'pointer', outline: tab === 'usecases' ? '1px solid var(--accent)' : 'none' }}
+            onClick={() => setTab('usecases')}
+          >
+            <div className="stat-label">Use casy</div>
+            <div className="stat-value">{useCases.length}</div>
+            <div className="stat-sub">celkem</div>
+          </div>
+          <div
+            className="stat-card"
+            style={{
+              cursor: 'pointer',
+              outline: tab === 'review' ? '1px solid var(--accent)' : 'none',
+              borderColor: reviewUc.length > 0 ? 'rgba(245,158,11,0.3)' : undefined,
+            }}
+            onClick={() => setTab('review')}
+          >
+            <div className="stat-label">Ke kontrole</div>
+            <div className="stat-value" style={{ color: reviewUc.length > 0 ? '#f59e0b' : undefined }}>
+              {reviewUc.length}
+            </div>
+            <div className="stat-sub">čeká admin</div>
+          </div>
+          <div
+            className="stat-card"
+            style={{
+              cursor: 'pointer',
+              outline: tab === 'returned' ? '1px solid var(--accent)' : 'none',
+              borderColor: returnedUc.length > 0 ? 'rgba(239,68,68,0.3)' : undefined,
+            }}
+            onClick={() => setTab('returned')}
+          >
+            <div className="stat-label">Vráceno</div>
+            <div className="stat-value" style={{ color: returnedUc.length > 0 ? '#ef4444' : undefined }}>
+              {returnedUc.length}
+            </div>
+            <div className="stat-sub">k úpravě</div>
+          </div>
+        </div>
+
         {/* Tabs */}
         <div className="tabs-row" style={{ marginBottom: 24 }}>
           {tabs.map(t => (
@@ -148,7 +200,12 @@ export default function MyWorkPage() {
                       <span className="tab-count" style={{ marginLeft: 6 }}>{items.length}</span>
                     </div>
                     {items.map(t => (
-                      <div key={t.id} className="tool-card mw-tool-card">
+                      <div
+                        key={t.id}
+                        className="tool-card mw-tool-card"
+                        style={{ cursor: 'pointer' }}
+                        onClick={() => router.push(`/app/chat?tool=${encodeURIComponent(t.name)}`)}
+                      >
                         <div style={{ flex: 1 }}>
                           <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', marginBottom: 2 }}>
                             <div className="tool-name">{t.name}</div>
@@ -165,7 +222,7 @@ export default function MyWorkPage() {
                         <div className="tool-actions" style={{ flexDirection: 'column', alignItems: 'flex-end', gap: 6 }}>
                           <button
                             className="btn btn-outline btn-xs"
-                            onClick={() => router.push(`/app/chat?tool=${encodeURIComponent(t.name)}`)}
+                            onClick={e => { e.stopPropagation(); router.push(`/app/chat?tool=${encodeURIComponent(t.name)}`) }}
                           >
                             💬 Use case
                           </button>
@@ -173,7 +230,7 @@ export default function MyWorkPage() {
                             <button
                               className="btn btn-ghost btn-xs"
                               disabled={movingId === t.id}
-                              onClick={() => moveStatus(t.id, 'in_progress')}
+                              onClick={e => { e.stopPropagation(); moveStatus(t.id, 'in_progress') }}
                             >
                               → In Progress
                             </button>
@@ -182,7 +239,7 @@ export default function MyWorkPage() {
                             <button
                               className="btn btn-ghost btn-xs"
                               disabled={movingId === t.id}
-                              onClick={() => moveStatus(t.id, 'completed')}
+                              onClick={e => { e.stopPropagation(); moveStatus(t.id, 'completed') }}
                             >
                               → Hotovo
                             </button>
