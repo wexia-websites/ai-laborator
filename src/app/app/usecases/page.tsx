@@ -614,7 +614,7 @@ function UseCasesContent() {
       {/* DETAIL MODAL */}
       {selected && (
         <div className="modal-bg open" onClick={e => e.target === e.currentTarget && setSelected(null)}>
-          <div className="modal modal-detail" style={{ width: 700, maxHeight: '90vh', display: 'flex', flexDirection: 'column' }}>
+          <div className="modal modal-detail" style={{ width: '90vw', maxWidth: 860, maxHeight: '90vh', display: 'flex', flexDirection: 'column' }}>
             <button className="modal-close" onClick={() => setSelected(null)}>×</button>
 
             {/* Hlavička */}
@@ -648,7 +648,7 @@ function UseCasesContent() {
             </div>
 
             {/* Scrollovatelný obsah */}
-            <div className="modal-body" style={{ flex: 1, overflowY: 'auto', padding: '0 24px 16px' }}>
+            <div className="modal-body" style={{ flex: 1, overflowY: 'auto', padding: '0 32px 24px' }}>
               {(() => {
                 const s = selected as any
                 return (
@@ -686,21 +686,17 @@ function UseCasesContent() {
                         <div className="uc-field">{s.best_for_roles}</div>
                       </>
                     )}
-                    {(s.similar_tools || s.pricing) && (
-                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 14 }}>
-                        {s.similar_tools && (
-                          <div>
-                            <div className="uc-section" style={{ margin: '0 0 6px' }}>🔄 Podobné nástroje</div>
-                            <div className="uc-field" style={{ marginBottom: 0 }}>{s.similar_tools}</div>
-                          </div>
-                        )}
-                        {s.pricing && (
-                          <div>
-                            <div className="uc-section" style={{ margin: '0 0 6px' }}>💰 Cena</div>
-                            <div className="uc-field" style={{ marginBottom: 0 }}>{s.pricing}</div>
-                          </div>
-                        )}
-                      </div>
+                    {s.similar_tools && (
+                      <>
+                        <div className="uc-section">🔄 Podobné nástroje</div>
+                        <div className="uc-field">{s.similar_tools}</div>
+                      </>
+                    )}
+                    {s.pricing && (
+                      <>
+                        <div className="uc-section">💰 Cena</div>
+                        <div className="uc-field">{s.pricing}</div>
+                      </>
                     )}
 
                     {/* Zvýrazněné kartičky: Úspora času + Aha moment */}
