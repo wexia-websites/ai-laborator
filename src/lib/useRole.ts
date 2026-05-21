@@ -14,6 +14,7 @@ const PERMISSIONS: Record<string, Role[]> = {
   claimboard:    ['admin', 'analyst'],
   'my-work':     ['admin', 'analyst'],
   verify:        ['admin'],
+  approval:      ['admin'],
   'tools-tested':['admin'],
   usecases:      ['admin', 'analyst', 'viewer'],
   revision:      ['admin'],

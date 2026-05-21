@@ -20,7 +20,6 @@ const NAV_SECTIONS: NavSection[] = [
     heading: 'AI NÁSTROJE',
     items: [
       { id: 'inbox',         label: 'K otestování',    icon: '⊹', href: '/app/inbox' },
-      { id: 'verify',        label: 'Verifikace',      icon: '⚐', href: '/app/verify' },
       { id: 'tools-tested',  label: 'Otestované',      icon: '✦', href: '/app/tools-tested' },
       { id: 'ai-watch',      label: 'AI News feed',    icon: '◌', href: '/app/ai-watch' },
       { id: 'my-work',       label: 'Moje práce',      icon: '▤',  href: '/app/my-work' },
@@ -38,7 +37,7 @@ const NAV_SECTIONS: NavSection[] = [
   {
     heading: 'SPRÁVA',
     items: [
-      { id: 'review',   label: 'Kontrola',         icon: '✓', href: '/app/review' },
+      { id: 'approval',  label: 'Schválení',         icon: '✓', href: '/app/approval' },
       { id: 'settings', label: 'Nastavení',        icon: '◈', href: '/app/settings' },
       { id: 'admin',    label: 'Správa uživatelů', icon: '◉', href: '/app/admin' },
     ],
