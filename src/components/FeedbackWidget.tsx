@@ -68,48 +68,24 @@ function initWidget() {
       try {
         const { data: { user } } = await supabase.auth.getUser()
 
-        // Přidej outline na označený prvek před screenshotem
-        const selector = payload.element?.selector as string | undefined
-        let targetEl: HTMLElement | null = null
-        if (selector) {
-          targetEl = document.querySelector(selector)
-          if (targetEl) {
-            targetEl.style.outline = '3px solid #e02020'
-            targetEl.style.outlineOffset = '2px'
-          }
-        }
+        // Widget sám pořídí screenshot (s červeným overlay na prvku) před voláním onSubmit
+        // payload.screenshot = data URL string "data:image/png;base64,..."
+        const screenshotBase64 = typeof payload.screenshot === 'string'
+          ? payload.screenshot.split(',')[1]
+          : null
 
-        // Skryj widget panel aby nebyl ve screenshotu
-        const widgetRoot = document.getElementById('wexia-feedback-root')
-        if (widgetRoot) widgetRoot.style.display = 'none'
-
-        // Screenshot s červeně označeným prvkem
-        let screenshotBase64: string | null = null
-        try {
-          const html2canvas = (await import('html2canvas')).default
-          const canvas = await html2canvas(document.body, { scale: 1, useCORS: true, logging: false })
-          screenshotBase64 = canvas.toDataURL('image/png').split(',')[1]
-        } catch (e) {
-          console.warn('Screenshot failed:', e)
-        }
-
-        // Obnov widget a odstraň outline
-        if (widgetRoot) widgetRoot.style.display = ''
-        if (targetEl) {
-          targetEl.style.outline = ''
-          targetEl.style.outlineOffset = ''
-        }
+        const selector = payload.selectedElement?.selector as string | undefined
 
         const feedbackData = {
-          user_id:          user?.id,
-          user_email:       user?.email,
-          category:         payload.category || 'bug',
-          comment:          payload.comment  || '',
-          element_selector: selector         || '',
+          user_id:           user?.id,
+          user_email:        user?.email,
+          category:          payload.category || 'bug',
+          comment:           payload.comment  || '',
+          element_selector:  selector         || '',
           screenshot_base64: screenshotBase64,
-          url:              window.location.href,
-          user_agent:       navigator.userAgent,
-          timestamp:        new Date().toISOString(),
+          url:               window.location.href,
+          user_agent:        navigator.userAgent,
+          timestamp:         new Date().toISOString(),
         }
 
         fetch('/api/feedback', {
