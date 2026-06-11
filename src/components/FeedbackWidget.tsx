@@ -4,6 +4,11 @@ import { supabase } from '@/lib/supabase'
 
 const SCRIPT_ID = 'wexia-feedback-script'
 
+// Sdílený stav mezi reinity widgetu
+let savedScreenshotBase64: string | null = null
+let pickBorderEl: HTMLDivElement | null = null
+let pickObserver: MutationObserver | null = null
+
 function showToast(message: string) {
   document.getElementById('feedback-toast')?.remove()
   const el = document.createElement('div')
@@ -26,6 +31,80 @@ function showToast(message: string) {
   ].join(';')
   document.body.appendChild(el)
   setTimeout(() => el.remove(), 3500)
+}
+
+// Spustí se po initWidget — sleduje kdy widget přejde do pick mode (div.wf-overlay)
+// a hned při kliknutí pořídí screenshot s červeným rámečkem
+function setupPickInterception() {
+  pickObserver?.disconnect()
+  pickObserver = null
+
+  const widgetRoot = document.getElementById('wexia-feedback-root')
+  if (!widgetRoot) return
+
+  pickObserver = new MutationObserver((mutations) => {
+    for (const mutation of mutations) {
+      for (const node of Array.from(mutation.addedNodes)) {
+        if (!(node instanceof HTMLElement) || !node.classList.contains('wf-overlay')) continue
+
+        // Capture phase — náš handler před widget onclick, widget onclick=form show
+        node.addEventListener('click', async (e: MouseEvent) => {
+          // Najdi skutečný element pod overlay (vyfiltruj widget elementy)
+          const els = document.elementsFromPoint(e.clientX, e.clientY)
+          const target = els.find(el =>
+            !el.closest('#wexia-feedback-root') &&
+            el.tagName !== 'HTML' &&
+            el.tagName !== 'BODY'
+          ) as HTMLElement | null
+
+          if (!target) return
+
+          // Odstraň starý rámeček
+          pickBorderEl?.remove()
+
+          // Červený rámeček nad označeným prvkem (border funguje v html2canvas, outline ne)
+          const rect = target.getBoundingClientRect()
+          pickBorderEl = document.createElement('div')
+          Object.assign(pickBorderEl.style, {
+            position:   'fixed',
+            left:       `${rect.left - 4}px`,
+            top:        `${rect.top - 4}px`,
+            width:      `${rect.width + 8}px`,
+            height:     `${rect.height + 8}px`,
+            border:     '4px solid #e02020',
+            borderRadius: '4px',
+            background: 'rgba(224,32,32,0.07)',
+            zIndex:     '2147480000',
+            pointerEvents: 'none',
+            boxSizing:  'border-box',
+          })
+          document.body.appendChild(pickBorderEl)
+
+          // Skryj widget před screenshotem — widget form se zobrazí ale zůstane skrytý
+          // dokud screenshot nedokončíme (300ms)
+          const widgetEl = document.getElementById('wexia-feedback-root')
+          if (widgetEl) widgetEl.style.visibility = 'hidden'
+
+          // 300ms = rámeček se vyrenderuje, widget zůstává skrytý
+          await new Promise(r => setTimeout(r, 300))
+
+          savedScreenshotBase64 = null
+          try {
+            const html2canvas = (await import('html2canvas')).default
+            const canvas = await html2canvas(document.body, { scale: 1, useCORS: true, logging: false })
+            savedScreenshotBase64 = canvas.toDataURL('image/png').split(',')[1]
+          } catch (err) {
+            console.warn('Pick screenshot failed:', err)
+          }
+
+          // Obnov widget — uživatel teď uvidí formulář
+          if (widgetEl) widgetEl.style.visibility = 'visible'
+        }, true) // capture = před widget onclick
+      }
+    }
+  })
+
+  pickObserver.observe(widgetRoot, { childList: true, subtree: true })
 }
 
 function initWidget() {
@@ -65,66 +144,14 @@ function initWidget() {
     onSubmit: async (payload: any) => {
       showToast('✓ Feedback úspěšně odeslán')
 
+      // Odstraň červený rámeček
+      pickBorderEl?.remove()
+      pickBorderEl = null
+
       try {
         const { data: { user } } = await supabase.auth.getUser()
 
         const selector = payload.selectedElement?.selector as string | undefined
-        const targetEl = selector ? document.querySelector<HTMLElement>(selector) : null
-        let screenshotBase64: string | null = null
-
-        try {
-          const widgetEl = document.getElementById('wexia-feedback-root')
-          if (widgetEl) widgetEl.style.visibility = 'hidden'
-
-          // Overlay div s červeným rámečkem (border = html2canvas ho renderuje, outline ne)
-          let overlay: HTMLDivElement | null = null
-          if (targetEl) {
-            const rect = targetEl.getBoundingClientRect()
-            overlay = document.createElement('div')
-            Object.assign(overlay.style, {
-              position: 'fixed',
-              left: `${rect.left - 4}px`,
-              top: `${rect.top - 4}px`,
-              width: `${rect.width + 8}px`,
-              height: `${rect.height + 8}px`,
-              border: '4px solid #e02020',
-              borderRadius: '4px',
-              background: 'rgba(224,32,32,0.07)',
-              zIndex: '2147480000',
-              pointerEvents: 'none',
-              boxSizing: 'border-box',
-            })
-            document.body.appendChild(overlay)
-          }
-
-          // Flash efekt pro UX (odstraní se před screenshotem)
-          const flash = document.createElement('div')
-          Object.assign(flash.style, {
-            position: 'fixed', top: '0', left: '0',
-            width: '100%', height: '100%',
-            background: 'white', opacity: '0.35',
-            zIndex: '2147481000', pointerEvents: 'none',
-          })
-          document.body.appendChild(flash)
-
-          // Flash trvá 200ms, pak zmizí a screenshot jde bez bílého přebarvení
-          await new Promise(r => setTimeout(r, 200))
-          flash.remove()
-
-          // Krátká pauza aby browser překreslil (overlay viditelný, flash pryč)
-          await new Promise(r => setTimeout(r, 100))
-
-          // Screenshot — overlay div s border bude zachycen
-          const html2canvas = (await import('html2canvas')).default
-          const canvas = await html2canvas(document.body, { scale: 1, useCORS: true, logging: false })
-          screenshotBase64 = canvas.toDataURL('image/png').split(',')[1]
-
-          // Cleanup
-          overlay?.remove()
-          if (widgetEl) widgetEl.style.visibility = 'visible'
-        } catch (e) {
-          console.warn('Screenshot failed:', e)
-        }
 
         const feedbackData = {
           user_id:           user?.id,
@@ -132,11 +159,13 @@ function initWidget() {
           category:          payload.category || 'bug',
           comment:           payload.comment  || '',
           element_selector:  selector         || '',
-          screenshot_base64: screenshotBase64,
+          screenshot_base64: savedScreenshotBase64, // ze selekce prvku, ne z odeslání
           url:               window.location.href,
           user_agent:        navigator.userAgent,
           timestamp:         new Date().toISOString(),
         }
+
+        savedScreenshotBase64 = null
 
         fetch('/api/feedback', {
           method: 'POST',
@@ -157,11 +186,12 @@ function initWidget() {
       }
     }
   })
+
+  setupPickInterception()
 }
 
 export function FeedbackWidget() {
   useEffect(() => {
-    // Zabraní double init (React 18 Strict Mode)
     if (document.getElementById(SCRIPT_ID)) {
       initWidget()
       return
@@ -176,6 +206,8 @@ export function FeedbackWidget() {
 
     return () => {
       window.WexiaFeedback?.destroy?.()
+      pickObserver?.disconnect()
+      pickBorderEl?.remove()
     }
   }, [])
 
