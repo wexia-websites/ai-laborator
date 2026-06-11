@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { supabase } from '@/lib/supabase'
+import { createClient } from '@supabase/supabase-js'
 
 export async function POST(req: NextRequest) {
   const { useCaseId } = await req.json()
@@ -7,6 +7,12 @@ export async function POST(req: NextRequest) {
 
   const webhookUrl = process.env.MAKE_WEBHOOK_URL
   if (!webhookUrl) return NextResponse.json({ success: true, skipped: true })
+
+  // Service role klient — obchází RLS (use_cases má policy "to authenticated")
+  const supabase = createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+  )
 
   const { data: uc, error } = await supabase
     .from('use_cases')
