@@ -1808,3 +1808,196 @@ body {
   background: rgba(239,68,68,0.07);
   border-color: rgba(239,68,68,0.2);
 }
+
+/* Feedback Widget Premium Styling */
+#wexia-feedback-root .wf-hint {
+  top: auto !important;
+  left: auto !important;
+  transform: none !important;
+  bottom: 58px !important;
+  right: 18px !important;
+  background: rgba(255,255,255,0.02) !important;
+  color: rgba(200,200,200,0.9) !important;
+  border: 1px solid rgba(150,150,150,0.38) !important;
+  border-radius: 10px !important;
+  padding: 8px 12px !important;
+  font-size: 12px !important;
+  font-weight: 500 !important;
+  backdrop-filter: blur(8px) !important;
+  -webkit-backdrop-filter: blur(8px) !important;
+  box-shadow: none !important;
+  white-space: nowrap !important;
+}
+#wexia-feedback-root .wf-launcher.minimal {
+  width: auto !important;
+  max-width: 34px !important;
+  overflow: hidden !important;
+  flex-direction: row-reverse !important;
+  justify-content: flex-start !important;
+  padding: 0 10px !important;
+  transition: max-width 0.3s cubic-bezier(0.4,0,0.2,1), transform 0.2s ease, background 0.15s ease, border-color 0.15s ease !important;
+}
+#wexia-feedback-root .wf-launcher.minimal::after {
+  content: 'Nahlásit chybu';
+  font-size: 12px;
+  font-weight: 500;
+  white-space: nowrap;
+  color: rgba(210,210,210,0.9);
+  max-width: 0;
+  overflow: hidden;
+  margin-right: 0;
+  opacity: 0;
+  transition: max-width 0.3s cubic-bezier(0.4,0,0.2,1), margin-right 0.3s ease, opacity 0.15s ease;
+}
+#wexia-feedback-root .wf-launcher.minimal:hover {
+  max-width: 180px !important;
+  transform: scale(1.03) !important;
+  border-color: rgba(190,190,190,0.55) !important;
+  background: rgba(255,255,255,0.05) !important;
+}
+#wexia-feedback-root .wf-launcher.minimal:hover::after {
+  max-width: 110px;
+  margin-right: 8px;
+  opacity: 1;
+  transition: max-width 0.3s cubic-bezier(0.4,0,0.2,1), margin-right 0.3s ease, opacity 0.2s ease 0.1s;
+}
+#wexia-feedback-root .wf-panel {
+  border: 1px solid rgba(255, 255, 255, 0.12) !important;
+  border-radius: 22px !important;
+  padding: 20px 20px 16px !important;
+  box-shadow: 0 32px 80px rgba(0, 0, 0, 0.6) !important;
+  background: #111111 !important;
+  width: min(340px, calc(100vw - 24px)) !important;
+}
+
+/* Header: SVG bug icon + close */
+#wexia-feedback-root .wf-panel h3 {
+  font-size: 17px !important;
+  font-weight: 700 !important;
+  margin: 0 0 4px !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 10px !important;
+}
+#wexia-feedback-root .wf-panel h3::before {
+  content: '';
+  display: inline-block;
+  width: 22px;
+  height: 22px;
+  flex-shrink: 0;
+  background-color: rgba(255, 255, 255, 0.75);
+  -webkit-mask-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 24 24' xmlns='http://www.w3.org/2000/svg'%3E%3Cellipse cx='12' cy='13' rx='5' ry='6' fill='none' stroke='currentColor' stroke-width='1.65'/%3E%3Cpath d='M9 7.5C9 5.57 10.34 4 12 4s3 1.57 3 3.5' fill='none' stroke='currentColor' stroke-width='1.65' stroke-linecap='round'/%3E%3Cpath d='M7 10l-2.5-1.5M17 10l2.5-1.5' fill='none' stroke='currentColor' stroke-width='1.65' stroke-linecap='round'/%3E%3Cpath d='M7 13.5H4M20 13.5h-3' fill='none' stroke='currentColor' stroke-width='1.65' stroke-linecap='round'/%3E%3Cpath d='M7 17l-2 2M17 17l2 2' fill='none' stroke='currentColor' stroke-width='1.65' stroke-linecap='round'/%3E%3C/svg%3E");
+  mask-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 24 24' xmlns='http://www.w3.org/2000/svg'%3E%3Cellipse cx='12' cy='13' rx='5' ry='6' fill='none' stroke='currentColor' stroke-width='1.65'/%3E%3Cpath d='M9 7.5C9 5.57 10.34 4 12 4s3 1.57 3 3.5' fill='none' stroke='currentColor' stroke-width='1.65' stroke-linecap='round'/%3E%3Cpath d='M7 10l-2.5-1.5M17 10l2.5-1.5' fill='none' stroke='currentColor' stroke-width='1.65' stroke-linecap='round'/%3E%3Cpath d='M7 13.5H4M20 13.5h-3' fill='none' stroke='currentColor' stroke-width='1.65' stroke-linecap='round'/%3E%3Cpath d='M7 17l-2 2M17 17l2 2' fill='none' stroke='currentColor' stroke-width='1.65' stroke-linecap='round'/%3E%3C/svg%3E");
+  -webkit-mask-size: contain;
+  mask-size: contain;
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
+}
+#wexia-feedback-root .wf-panel h3::after {
+  content: '×';
+  margin-left: auto;
+  font-size: 18px;
+  color: #666;
+  font-weight: 400;
+  cursor: pointer;
+}
+
+/* Subtitle pod nadpisem */
+#wexia-feedback-root .wf-panel .wf-meta {
+  font-size: 12px !important;
+  color: #888888 !important;
+  margin: 0 0 14px !important;
+  word-break: break-all !important;
+  line-height: 1.5 !important;
+}
+
+/* "Vybraný prvek" label nad meta */
+#wexia-feedback-root .wf-panel .wf-meta::before {
+  content: 'Vybraný prvek';
+  display: block;
+  font-size: 13px;
+  font-weight: 600;
+  color: #ffffff;
+  margin-bottom: 6px;
+}
+
+/* Selector v boxu */
+#wexia-feedback-root .wf-panel .wf-meta {
+  background: rgba(255,255,255,0.04) !important;
+  border: 1px solid rgba(255,255,255,0.10) !important;
+  border-radius: 12px !important;
+  padding: 10px 12px !important;
+  font-family: monospace !important;
+  font-size: 11px !important;
+  color: #cccccc !important;
+}
+
+#wexia-feedback-root .wf-panel label {
+  display: block !important;
+  font-size: 13px !important;
+  font-weight: 600 !important;
+  color: #ffffff !important;
+  margin: 14px 0 8px !important;
+}
+
+#wexia-feedback-root .wf-panel select,
+#wexia-feedback-root .wf-panel textarea {
+  border: 1px solid rgba(255,255,255,0.12) !important;
+  background: rgba(28,28,28,0.9) !important;
+  border-radius: 12px !important;
+  padding: 11px 14px !important;
+  color: #f0f0f0 !important;
+  font-size: 13px !important;
+}
+
+#wexia-feedback-root .wf-panel select:focus,
+#wexia-feedback-root .wf-panel textarea:focus {
+  border-color: rgba(224, 32, 32, 0.5) !important;
+  outline: none !important;
+}
+
+#wexia-feedback-root .wf-panel textarea {
+  min-height: 130px !important;
+  resize: vertical !important;
+}
+
+/* Info text nad actions */
+#wexia-feedback-root .wf-status {
+  font-size: 11.5px !important;
+  color: #777777 !important;
+  margin: 10px 0 0 !important;
+  padding: 0 !important;
+  background: none !important;
+  border: none !important;
+  line-height: 1.5 !important;
+}
+#wexia-feedback-root .wf-status:empty::before {
+  content: 'ⓘ  Označený prvek a váš komentář nám pomohou chybu lépe pochopit.';
+  display: block;
+}
+
+#wexia-feedback-root .wf-actions {
+  gap: 10px !important;
+  margin-top: 14px !important;
+}
+
+#wexia-feedback-root .wf-btn {
+  border-radius: 12px !important;
+  padding: 13px 16px !important;
+  font-weight: 700 !important;
+  font-size: 14px !important;
+}
+
+#wexia-feedback-root .wf-btn.primary {
+  background: #e02020 !important;
+  box-shadow: 0 4px 16px rgba(224,32,32,0.25) !important;
+}
+#wexia-feedback-root .wf-btn.primary:hover {
+  background: #f02828 !important;
+}
+
+#wexia-feedback-root .wf-btn.secondary {
+  background: rgba(255,255,255,0.07) !important;
+  border: 1px solid rgba(255,255,255,0.10) !important;
+  color: #dddddd !important;
+}
