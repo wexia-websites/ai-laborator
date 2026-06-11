@@ -30,6 +30,7 @@ export function FeedbackWidget() {
   const [selected, setSelected]   = useState<SelectedEl | null>(null)
   const [category, setCategory]   = useState('bug')
   const [comment, setComment]     = useState('')
+  const [loadingMsg, setLoadingMsg] = useState('')
   const hovered = useRef<HTMLElement | null>(null)
 
   // Udržuje červený outline na vybraném prvku
@@ -112,59 +113,75 @@ export function FeedbackWidget() {
     let screenshotUrl: string | null = null
     const widgetEl = document.getElementById('fw-root')
 
+    // ── Screenshot ─────────────────────────────────────────────
     try {
-      // 1. Ujisti se že označený prvek má červený outline
+      setLoadingMsg('Pořizuji screenshot...')
+
+      // 1. Červený outline na označený prvek
       if (selected?.domRef) {
         selected.domRef.style.outline = '3px solid red'
         selected.domRef.style.outlineOffset = '2px'
       }
 
-      // 2. Skryj widget (display:none) aby nebyl na screenshotu
+      // 2. Skryj widget (display:none)
       if (widgetEl) widgetEl.style.display = 'none'
-      await new Promise(r => setTimeout(r, 60)) // počkej na překreslení
+      await new Promise(r => setTimeout(r, 80))
 
-      // 3. Screenshot celé stránky
-      try {
-        const html2canvas = (await import('html2canvas')).default
-        const canvas = await html2canvas(document.body, {
-          useCORS: true,
-          allowTaint: true,
-          logging: false,
-          scale: 0.5,
-        })
+      // 3. html2canvas
+      const html2canvas = (await import('html2canvas')).default
+      const canvas = await html2canvas(document.body, {
+        useCORS: true,
+        allowTaint: true,
+        logging: false,
+        scale: 0.5,
+      })
 
-        // 4. Obnov widget
-        if (widgetEl) widgetEl.style.display = ''
-
-        // 5. Odstraň outline po screenshotu
-        if (selected?.domRef) {
-          selected.domRef.style.outline = ''
-          selected.domRef.style.outlineOffset = ''
-        }
-
-        // 6. Upload do Supabase Storage
-        screenshotUrl = await new Promise<string | null>(resolve => {
-          canvas.toBlob(async (blob) => {
-            if (!blob) { resolve(null); return }
-            const fileName = `feedback_${Date.now()}.png`
-            const { data, error } = await supabase.storage
-              .from('feedback-screenshots')
-              .upload(fileName, blob, { contentType: 'image/png' })
-            if (error || !data) { console.warn('Upload failed:', error); resolve(null); return }
-            const { data: urlData } = supabase.storage
-              .from('feedback-screenshots')
-              .getPublicUrl(data.path)
-            resolve(urlData.publicUrl)
-          }, 'image/png')
-        })
-      } catch (screenshotErr) {
-        console.warn('Screenshot failed:', screenshotErr)
-        if (widgetEl) widgetEl.style.display = ''
-        if (selected?.domRef) { selected.domRef.style.outline = ''; selected.domRef.style.outlineOffset = '' }
+      // 4. Obnov widget + odstraň outline
+      if (widgetEl) widgetEl.style.display = ''
+      if (selected?.domRef) {
+        selected.domRef.style.outline = ''
+        selected.domRef.style.outlineOffset = ''
       }
 
-      // 7. Ulož do DB
+      // 5. toBlob
+      setLoadingMsg('Nahrávám screenshot...')
+      const blob: Blob | null = await new Promise(resolve => canvas.toBlob(resolve, 'image/png'))
+
+      if (!blob) {
+        console.error('Screenshot: canvas.toBlob vrátil null')
+      } else {
+        console.log('Screenshot blob:', blob.size, 'bytes')
+        const fileName = `feedback_${Date.now()}.png`
+
+        // 6. Upload do Storage
+        const { data: uploadData, error: uploadError } = await supabase.storage
+          .from('feedback-screenshots')
+          .upload(fileName, blob, { contentType: 'image/png' })
+
+        if (uploadError) {
+          console.error('Screenshot upload error:', uploadError)
+        } else if (uploadData) {
+          const { data: urlData } = supabase.storage
+            .from('feedback-screenshots')
+            .getPublicUrl(uploadData.path)
+          screenshotUrl = urlData.publicUrl
+          console.log('Screenshot URL:', screenshotUrl)
+        }
+      }
+    } catch (screenshotErr) {
+      console.error('Screenshot failed:', screenshotErr)
+      if (widgetEl) widgetEl.style.display = ''
+      if (selected?.domRef) {
+        selected.domRef.style.outline = ''
+        selected.domRef.style.outlineOffset = ''
+      }
+    }
+
+    // ── DB insert ───────────────────────────────────────────────
+    try {
+      setLoadingMsg('Ukládám feedback...')
       const { data: { user } } = await supabase.auth.getUser()
+
       const feedbackData = {
         user_id:          user?.id,
         user_email:       user?.email,
@@ -177,21 +194,21 @@ export function FeedbackWidget() {
         timestamp:        new Date().toISOString(),
       }
 
-      supabase.from('feedback').insert(feedbackData)
-        .then((res: { error: unknown }) => { if (res.error) console.error('Feedback DB error:', res.error) })
+      console.log('Saving feedback, screenshot_url:', screenshotUrl)
+      const { error: dbError } = await supabase.from('feedback').insert(feedbackData)
+      if (dbError) console.error('Feedback DB error:', dbError)
 
       const wh = process.env.NEXT_PUBLIC_FEEDBACK_WEBHOOK_URL
       if (wh) fetch(wh, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(feedbackData),
-      }).catch(err => console.error('Feedback webhook error:', err))
+      }).catch(err => console.error('Webhook error:', err))
 
       setState('success')
       setTimeout(reset, 2500)
     } catch (err) {
-      console.error('Feedback error:', err)
-      if (widgetEl) widgetEl.style.display = ''
+      console.error('Feedback DB save error:', err)
       setState('open')
     }
   }, [category, comment, selected, reset])
@@ -339,6 +356,11 @@ export function FeedbackWidget() {
             }}
           />
 
+          {/* Loading stav */}
+          {isSubmitting && loadingMsg && (
+            <div style={{ fontSize: 12, color: '#888', textAlign: 'center' }}>{loadingMsg}</div>
+          )}
+
           {/* Submit */}
           <button
             onClick={submit}
@@ -352,7 +374,7 @@ export function FeedbackWidget() {
               transition: 'background 0.15s',
             }}
           >
-            {isSubmitting ? 'Odesílám...' : 'Odeslat'}
+            {isSubmitting ? loadingMsg || 'Odesílám...' : 'Odeslat'}
           </button>
         </div>
       </div>
