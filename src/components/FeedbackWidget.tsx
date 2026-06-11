@@ -110,24 +110,22 @@ export function FeedbackWidget() {
     if (!comment.trim()) return
     setState('submitting')
 
-    let screenshotUrl: string | null = null
     const widgetEl = document.getElementById('fw-root')
+    let screenshotBase64: string | null = null
 
     // ── Screenshot ─────────────────────────────────────────────
     try {
       setLoadingMsg('Pořizuji screenshot...')
+      console.log('Starting screenshot...')
 
-      // 1. Červený outline na označený prvek
       if (selected?.domRef) {
         selected.domRef.style.outline = '3px solid red'
         selected.domRef.style.outlineOffset = '2px'
       }
 
-      // 2. Skryj widget (display:none)
       if (widgetEl) widgetEl.style.display = 'none'
       await new Promise(r => setTimeout(r, 80))
 
-      // 3. html2canvas
       const html2canvas = (await import('html2canvas')).default
       const canvas = await html2canvas(document.body, {
         useCORS: true,
@@ -136,38 +134,15 @@ export function FeedbackWidget() {
         scale: 0.5,
       })
 
-      // 4. Obnov widget + odstraň outline
       if (widgetEl) widgetEl.style.display = ''
       if (selected?.domRef) {
         selected.domRef.style.outline = ''
         selected.domRef.style.outlineOffset = ''
       }
 
-      // 5. toBlob
-      setLoadingMsg('Nahrávám screenshot...')
-      const blob: Blob | null = await new Promise(resolve => canvas.toBlob(resolve, 'image/png'))
-
-      if (!blob) {
-        console.error('Screenshot: canvas.toBlob vrátil null')
-      } else {
-        console.log('Screenshot blob:', blob.size, 'bytes')
-        const fileName = `feedback_${Date.now()}.png`
-
-        // 6. Upload do Storage
-        const { data: uploadData, error: uploadError } = await supabase.storage
-          .from('feedback-screenshots')
-          .upload(fileName, blob, { contentType: 'image/png' })
-
-        if (uploadError) {
-          console.error('Screenshot upload error:', uploadError)
-        } else if (uploadData) {
-          const { data: urlData } = supabase.storage
-            .from('feedback-screenshots')
-            .getPublicUrl(uploadData.path)
-          screenshotUrl = urlData.publicUrl
-          console.log('Screenshot URL:', screenshotUrl)
-        }
-      }
+      // Získej base64 (bez data: prefixu) — pošleme na server
+      screenshotBase64 = canvas.toDataURL('image/png').split(',')[1]
+      console.log('Screenshot done, size:', screenshotBase64.length, 'chars')
     } catch (screenshotErr) {
       console.error('Screenshot failed:', screenshotErr)
       if (widgetEl) widgetEl.style.display = ''
@@ -177,38 +152,51 @@ export function FeedbackWidget() {
       }
     }
 
-    // ── DB insert ───────────────────────────────────────────────
+    // ── Odešli na server API (upload + DB insert) ───────────────
     try {
-      setLoadingMsg('Ukládám feedback...')
+      setLoadingMsg('Nahrávám screenshot...')
       const { data: { user } } = await supabase.auth.getUser()
 
-      const feedbackData = {
-        user_id:          user?.id,
-        user_email:       user?.email,
+      const payload = {
+        screenshot_base64: screenshotBase64,
+        user_id:           user?.id,
+        user_email:        user?.email,
         category,
         comment,
-        element_selector: selected?.selector || '',
-        screenshot_url:   screenshotUrl,
-        url:              window.location.href,
-        user_agent:       navigator.userAgent,
-        timestamp:        new Date().toISOString(),
+        element_selector:  selected?.selector || '',
+        url:               window.location.href,
+        user_agent:        navigator.userAgent,
+        timestamp:         new Date().toISOString(),
       }
 
-      console.log('Saving feedback, screenshot_url:', screenshotUrl)
-      const { error: dbError } = await supabase.from('feedback').insert(feedbackData)
-      if (dbError) console.error('Feedback DB error:', dbError)
+      console.log('Saving feedback with screenshot:', !!screenshotBase64)
+      setLoadingMsg('Ukládám feedback...')
 
+      const res = await fetch('/api/feedback', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      })
+      const result = await res.json()
+
+      if (!res.ok) {
+        console.error('Feedback API error:', result.error)
+      } else {
+        console.log('Upload complete, url:', result.screenshot_url)
+      }
+
+      // Webhook
       const wh = process.env.NEXT_PUBLIC_FEEDBACK_WEBHOOK_URL
       if (wh) fetch(wh, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(feedbackData),
+        body: JSON.stringify({ ...payload, screenshot_url: result.screenshot_url }),
       }).catch(err => console.error('Webhook error:', err))
 
       setState('success')
       setTimeout(reset, 2500)
     } catch (err) {
-      console.error('Feedback DB save error:', err)
+      console.error('Feedback submit error:', err)
       setState('open')
     }
   }, [category, comment, selected, reset])
