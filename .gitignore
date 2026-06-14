@@ -4,7 +4,6 @@ node_modules/
 .env
 *.env
 .claude/
-CLAUDE_CONTEXT.md
 tsconfig.tsbuildinfo
 data/ai-watch/*.json
 data/ai-watch/*.tmp
