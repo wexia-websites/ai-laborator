@@ -91,7 +91,7 @@ function setupPickInterception() {
           savedScreenshotBase64 = null
           try {
             const html2canvas = (await import('html2canvas')).default
-            const canvas = await html2canvas(document.body, { scale: 1, useCORS: true, logging: false })
+            const canvas = await html2canvas(document.body, { scale: 2, useCORS: true, logging: false })
             savedScreenshotBase64 = canvas.toDataURL('image/png').split(',')[1]
           } catch (err) {
             console.warn('Pick screenshot failed:', err)
