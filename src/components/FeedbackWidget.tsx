@@ -92,7 +92,7 @@ function setupPickInterception() {
           try {
             const html2canvas = (await import('html2canvas')).default
             const canvas = await html2canvas(document.body, {
-              scale: 1,
+              scale: 2,
               useCORS: true,
               logging: false,
               x: window.scrollX,
