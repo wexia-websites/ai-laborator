@@ -91,11 +91,17 @@ function setupPickInterception() {
           savedScreenshotBase64 = null
           try {
             const html2canvas = (await import('html2canvas')).default
-            const canvas = await html2canvas(document.body, { scale: 1, useCORS: true, logging: false })
-            console.log('FEEDBACK DEBUG - Canvas:', canvas.width, 'x', canvas.height)
-            console.log('FEEDBACK DEBUG - Window:', window.innerWidth, 'x', window.innerHeight)
-            console.log('FEEDBACK DEBUG - Document:', document.body.scrollWidth, 'x', document.body.scrollHeight)
-            console.log('FEEDBACK DEBUG - DPR:', window.devicePixelRatio)
+            const canvas = await html2canvas(document.body, {
+              scale: 1,
+              useCORS: true,
+              logging: false,
+              x: window.scrollX,
+              y: window.scrollY,
+              width: window.innerWidth,
+              height: window.innerHeight,
+              windowWidth: document.documentElement.scrollWidth,
+              windowHeight: document.documentElement.scrollHeight,
+            })
             savedScreenshotBase64 = canvas.toDataURL('image/png').split(',')[1]
           } catch (err) {
             console.warn('Pick screenshot failed:', err)
