@@ -265,8 +265,12 @@ export default function RankingPage() {
       </div>
 
       {selected && (
-        <div className="modal-bg open" onClick={e => e.target === e.currentTarget && setSelected(null)}>
-          <div className="modal" style={{ width: 680 }}>
+        <div
+          className="modal-bg open"
+          style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 100 }}
+          onClick={e => e.target === e.currentTarget && setSelected(null)}
+        >
+          <div className="modal" style={{ width: '90vw', maxWidth: 860, maxHeight: '90vh', display: 'flex', flexDirection: 'column' }}>
             <button className="modal-close" onClick={() => setSelected(null)}>×</button>
             <div className="modal-header">
               <div className="modal-title">{selected.title}</div>
@@ -277,54 +281,56 @@ export default function RankingPage() {
               </div>
             </div>
 
-            {selected.description && (
-              <div style={{ fontSize: 13.5, color: 'var(--text2)', lineHeight: 1.6, marginBottom: 16 }}>{selected.description}</div>
-            )}
+            <div className="modal-body" style={{ flex: 1, overflowY: 'auto', padding: '0 32px 24px' }}>
+              {selected.description && (
+                <div style={{ fontSize: 13.5, color: 'var(--text2)', lineHeight: 1.6, marginBottom: 16 }}>{selected.description}</div>
+              )}
 
-            <Section title="Základní přehled" />
-            <Field label="Účel nástroje" value={(selected as any).purpose} />
-            <Field label="Podobné nástroje" value={(selected as any).similar_tools} />
-            <Field label="Cena" value={(selected as any).pricing} />
+              <Section title="Základní přehled" />
+              <Field label="Účel nástroje" value={(selected as any).purpose} />
+              <Field label="Podobné nástroje" value={(selected as any).similar_tools} />
+              <Field label="Cena" value={(selected as any).pricing} />
 
-            <Section title="Přínos pro byznys" />
-            <Field label="Nejlepší pro" value={(selected as any).best_for_roles} />
-            <Field label="Úspora času" value={(selected as any).time_saved} />
-            <Field label="Aha! moment" value={(selected as any).aha_moment} />
+              <Section title="Přínos pro byznys" />
+              <Field label="Nejlepší pro" value={(selected as any).best_for_roles} />
+              <Field label="Úspora času" value={(selected as any).time_saved} />
+              <Field label="Aha! moment" value={(selected as any).aha_moment} />
 
-            <Section title="Uživatelská přívětivost" />
-            <div style={{ display: 'flex', gap: 20, marginBottom: 12 }}>
-              {(selected as any).onboarding_score && <span className="tag">Onboarding: {(selected as any).onboarding_score}/5</span>}
-              {(selected as any).ui_intuitive && <span className="tag">UI: {(selected as any).ui_intuitive}</span>}
+              <Section title="Uživatelská přívětivost" />
+              <div style={{ display: 'flex', gap: 20, marginBottom: 12 }}>
+                {(selected as any).onboarding_score && <span className="tag">Onboarding: {(selected as any).onboarding_score}/5</span>}
+                {(selected as any).ui_intuitive && <span className="tag">UI: {(selected as any).ui_intuitive}</span>}
+              </div>
+
+              <Section title="Výkon AI" />
+              <Field label="Kvalita výstupů" value={(selected as any).output_quality} />
+              {(selected as any).hallucinates && (
+                <div style={{ marginBottom: 12 }}>
+                  <span className="tag">Halucinace: {(selected as any).hallucinates}</span>
+                </div>
+              )}
+
+              <Section title="Rizika" />
+              <Field label="Slabiny" value={(selected as any).weaknesses} />
+              <Field label="Bezpečnostní rizika" value={(selected as any).security_risks} />
+              <Field label="Limity nástroje" value={(selected as any).limitations} />
+
+              <Section title="Finální verdikt" />
+              <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', marginBottom: 12 }}>
+                {(selected as any).recommended && <span className={`tag ${(selected as any).recommended === 'ano' ? 'tag-green' : (selected as any).recommended === 'ne' ? 'tag-red' : 'tag-amber'}`}>Doporučení: {(selected as any).recommended}</span>}
+                {(selected as any).rating && <span className="tag">⭐ {(selected as any).rating}/10</span>}
+                {selected.effort && <span className="tag">Náročnost: {selected.effort}</span>}
+                {selected.impact && <span className="tag">Dopad: {selected.impact}</span>}
+                {selected.confidence_score > 0 && <span className="tag">Confidence: {selected.confidence_score}%</span>}
+              </div>
+              {selected.tags?.length > 0 && (
+                <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 12 }}>
+                  {selected.tags.map(t => <span key={t} className="tag">{t}</span>)}
+                </div>
+              )}
             </div>
 
-            <Section title="Výkon AI" />
-            <Field label="Kvalita výstupů" value={(selected as any).output_quality} />
-            {(selected as any).hallucinates && (
-              <div style={{ marginBottom: 12 }}>
-                <span className="tag">Halucinace: {(selected as any).hallucinates}</span>
-              </div>
-            )}
-
-            <Section title="Rizika" />
-            <Field label="Slabiny" value={(selected as any).weaknesses} />
-            <Field label="Bezpečnostní rizika" value={(selected as any).security_risks} />
-            <Field label="Limity nástroje" value={(selected as any).limitations} />
-
-            <Section title="Finální verdikt" />
-            <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', marginBottom: 12 }}>
-              {(selected as any).recommended && <span className={`tag ${(selected as any).recommended === 'ano' ? 'tag-green' : (selected as any).recommended === 'ne' ? 'tag-red' : 'tag-amber'}`}>Doporučení: {(selected as any).recommended}</span>}
-              {(selected as any).rating && <span className="tag">⭐ {(selected as any).rating}/10</span>}
-              {selected.effort && <span className="tag">Náročnost: {selected.effort}</span>}
-              {selected.impact && <span className="tag">Dopad: {selected.impact}</span>}
-              {selected.confidence_score > 0 && <span className="tag">Confidence: {selected.confidence_score}%</span>}
-            </div>
-            {selected.tags?.length > 0 && (
-              <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 12 }}>
-                {selected.tags.map(t => <span key={t} className="tag">{t}</span>)}
-              </div>
-            )}
-
-            <div className="modal-footer">
+            <div className="modal-footer" style={{ flexShrink: 0, borderTop: '1px solid var(--border)', padding: '12px 24px' }}>
               <button className="btn btn-ghost" onClick={() => setSelected(null)}>Zavřít</button>
             </div>
           </div>

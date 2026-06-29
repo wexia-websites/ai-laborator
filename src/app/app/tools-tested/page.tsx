@@ -334,49 +334,208 @@ export default function ToolsTestedPage() {
       </div>
 
       {/* ===== TOOLS DETAIL MODAL ===== */}
-      {opened && (
-        <div className="modal-bg open" onClick={e => e.target === e.currentTarget && setOpenId(null)}>
-          <div className="modal modal-detail">
-            <button className="modal-close" onClick={() => setOpenId(null)}>×</button>
-            <div className="modal-header">
-              <div className="modal-title">{opened.name}</div>
-              <div className="tool-vendor">
-                {opened.vendor}{opened.website_url && <> · <a href={opened.website_url} target="_blank" rel="noopener noreferrer">{opened.website_url} ↗</a></>}
-              </div>
-              {opened.audit && (
-                <div className="tool-vendor" style={{ marginTop: 4 }}>
-                  Audit od <strong>{opened.audit.author_name ?? '—'}</strong> · schválen {formatDate(opened.audit.reviewed_at)}
-                  {opened.audit.reviewer_name && <> přes <strong>{opened.audit.reviewer_name}</strong></>}
+      {opened && (() => {
+        const a = opened.audit
+        const rating = a?.rating ?? null
+        const ratingClass = !rating ? '' : rating >= 8 ? 'uc-rating-high' : rating >= 6 ? 'uc-rating-mid' : 'uc-rating-low'
+        const recBadge = a?.recommended === 'ano' ? 'uc-badge-yes' : a?.recommended === 'ne' ? 'uc-badge-no' : a?.recommended === 'možná' ? 'uc-badge-maybe' : ''
+        const recLabel = a?.recommended === 'ano' ? '✓ Doporučeno' : a?.recommended === 'ne' ? '✗ Nedoporučeno' : a?.recommended === 'možná' ? '? Možná' : ''
+        return (
+          <div
+            className="modal-bg open"
+            style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 100 }}
+            onClick={e => e.target === e.currentTarget && setOpenId(null)}
+          >
+            <div className="modal modal-detail" style={{ width: '90vw', maxWidth: 860, maxHeight: '90vh', display: 'flex', flexDirection: 'column' }}>
+              <button className="modal-close" onClick={() => setOpenId(null)}>×</button>
+
+              {/* Hlavička */}
+              <div className="uc-modal-header">
+                <div className="uc-modal-badges">
+                  {opened.category && <span className="uc-badge uc-badge-cat">{opened.category}</span>}
+                  {opened.status === 'in_progress' && (
+                    <span className="uc-badge" style={{ background: 'rgba(234,179,8,0.15)', color: '#ca8a04', border: '1px solid rgba(234,179,8,0.3)' }}>Probíhá</span>
+                  )}
+                  {recBadge && <span className={`uc-badge ${recBadge}`}>{recLabel}</span>}
+                  {rating && <span className={`uc-modal-rating ${ratingClass}`}>⭐ {rating}/10</span>}
                 </div>
-              )}
-            </div>
-            <div className="modal-body">
-              {opened.description && (
-                <div style={{ marginBottom: 16 }}>
-                  <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--text3)', marginBottom: 4 }}>Popis nástroje</div>
-                  <div>{opened.description}</div>
+                <div className="uc-modal-title">{opened.name}</div>
+                <div className="uc-modal-subtitle">
+                  {opened.vendor && <span>🏢 {opened.vendor}</span>}
+                  {a?.author_name && <span>👤 {a.author_name}</span>}
+                  {a?.reviewed_at && <span>📅 {formatDate(a.reviewed_at)}</span>}
                 </div>
-              )}
-              {opened.audit && AUDIT_DISPLAY.map(f => {
-                const value = opened.audit?.[f.key]
-                if (value === null || value === undefined || value === '') return null
-                return (
-                  <div key={f.key as string} style={{ marginBottom: 14 }}>
-                    <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--text3)', marginBottom: 4 }}>{f.label}</div>
-                    <div style={{ whiteSpace: 'pre-wrap' }}>{String(value)}</div>
+                {opened.website_url && (
+                  <div style={{ marginTop: 8 }}>
+                    <a href={opened.website_url} target="_blank" rel="noopener noreferrer"
+                      style={{ fontSize: 13, color: 'var(--accent)', textDecoration: 'none' }}>
+                      🔗 {opened.website_url} ↗
+                    </a>
                   </div>
-                )
-              })}
-              {!opened.audit && (
-                <div className="empty">Audit chybí — pravděpodobně historický záznam před zavedením audit flow.</div>
-              )}
-            </div>
-            <div className="modal-footer">
-              <button className="btn btn-ghost" onClick={() => setOpenId(null)}>Zavřít</button>
+                )}
+                {opened.description && <div className="uc-modal-desc">{opened.description}</div>}
+              </div>
+
+              {/* Scrollovatelný obsah */}
+              <div className="modal-body" style={{ flex: 1, overflowY: 'auto', padding: '0 32px 24px' }}>
+                {/* Metriky */}
+                <div className="uc-metrics">
+                  <div className="uc-metric">
+                    <div className="uc-metric-label">Hodnocení</div>
+                    <div className="uc-metric-value">{rating ? `${rating}/10` : '—'}</div>
+                  </div>
+                  <div className="uc-metric">
+                    <div className="uc-metric-label">Onboarding</div>
+                    <div className="uc-metric-value">{a?.onboarding_score ? `${a.onboarding_score}/10` : '—'}</div>
+                  </div>
+                  <div className="uc-metric">
+                    <div className="uc-metric-label">Legit skóre</div>
+                    <div className="uc-metric-value">{opened.legit_score ? `${opened.legit_score}/10` : '—'}</div>
+                  </div>
+                </div>
+
+                {/* Účel + Pro koho + Cena */}
+                {a?.purpose && (
+                  <>
+                    <div className="uc-section">🎯 Účel nástroje</div>
+                    <div className="uc-field">{a.purpose}</div>
+                  </>
+                )}
+                {a?.best_for_roles && (
+                  <>
+                    <div className="uc-section">👥 Nejlepší pro</div>
+                    <div className="uc-field">{a.best_for_roles}</div>
+                  </>
+                )}
+                {a?.pricing && (
+                  <>
+                    <div className="uc-section">💰 Cena</div>
+                    <div className="uc-field">{a.pricing}</div>
+                  </>
+                )}
+
+                {/* Barevné kartičky: Úspora + Aha moment */}
+                {(a?.time_saved || a?.aha_moment) && (
+                  <div className="uc-highlights">
+                    {a.time_saved && (
+                      <div className="uc-highlight uc-highlight-green">
+                        <div className="uc-highlight-icon">⏱</div>
+                        <div className="uc-highlight-label">Úspora času</div>
+                        <div className="uc-highlight-text">{a.time_saved}</div>
+                      </div>
+                    )}
+                    {a.aha_moment && (
+                      <div className="uc-highlight uc-highlight-blue">
+                        <div className="uc-highlight-icon">✨</div>
+                        <div className="uc-highlight-label">Aha! moment</div>
+                        <div className="uc-highlight-text">{a.aha_moment}</div>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* Uživatelská přívětivost */}
+                {(a?.onboarding_score || a?.ui_intuitive) && (
+                  <>
+                    <div className="uc-section">⭐ Uživatelská přívětivost</div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 24, marginBottom: 14, flexWrap: 'wrap' }}>
+                      {a.onboarding_score && (
+                        <div>
+                          <div style={{ fontSize: 11, color: 'var(--text3)', marginBottom: 4 }}>Onboarding (1–10)</div>
+                          <div style={{ fontSize: 18, fontWeight: 700, color: 'var(--text)' }}>{a.onboarding_score}/10</div>
+                        </div>
+                      )}
+                      {a.ui_intuitive && (
+                        <div>
+                          <div style={{ fontSize: 11, color: 'var(--text3)', marginBottom: 4 }}>UI intuitivní</div>
+                          <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--text2)' }}>{a.ui_intuitive}</div>
+                        </div>
+                      )}
+                    </div>
+                  </>
+                )}
+
+                {/* Výkon AI */}
+                {(a?.output_quality || a?.hallucinates) && (
+                  <>
+                    <div className="uc-section">🤖 Výkon AI</div>
+                    {a.output_quality && <div className="uc-field">{a.output_quality}</div>}
+                    {a.hallucinates && (
+                      <div style={{ marginBottom: 14 }}>
+                        <span style={{ fontSize: 12, color: 'var(--text3)', marginRight: 8 }}>Halucinace:</span>
+                        <span className={`uc-halluc-badge ${a.hallucinates === 'ne' ? 'uc-halluc-no' : a.hallucinates === 'ano' ? 'uc-halluc-yes' : 'uc-halluc-sometimes'}`}>
+                          {a.hallucinates === 'ne' ? '✓ Nehalucinuje' : a.hallucinates === 'ano' ? '✗ Halucinuje' : '⚠ Občas'}
+                        </span>
+                      </div>
+                    )}
+                  </>
+                )}
+
+                {/* Slabiny + Bezpečnostní rizika */}
+                {(a?.weaknesses || a?.security_risks) && (
+                  <div className="uc-highlights">
+                    {a.weaknesses && (
+                      <div className="uc-highlight uc-highlight-yellow">
+                        <div className="uc-highlight-icon">⚠</div>
+                        <div className="uc-highlight-label">Slabiny</div>
+                        <div className="uc-highlight-text">{a.weaknesses}</div>
+                      </div>
+                    )}
+                    {a.security_risks && (
+                      <div className="uc-highlight uc-highlight-red">
+                        <div className="uc-highlight-icon">🔒</div>
+                        <div className="uc-highlight-label">Bezpečnostní rizika</div>
+                        <div className="uc-highlight-text">{a.security_risks}</div>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* Limitace */}
+                {a?.limitations && (
+                  <>
+                    <div className="uc-section">🚧 Limitace</div>
+                    <div className="uc-field">{a.limitations}</div>
+                  </>
+                )}
+
+                {/* Souhrn / poznámky */}
+                {a?.notes && (
+                  <>
+                    <div className="uc-section">📝 Souhrn</div>
+                    <div className="uc-field">{a.notes}</div>
+                  </>
+                )}
+
+                {/* Poznámka reviewera */}
+                {a?.reviewer_note && (
+                  <>
+                    <div className="uc-section">✅ Poznámka reviewera</div>
+                    <div className="uc-field">{a.reviewer_note}</div>
+                  </>
+                )}
+
+                {/* Tagy */}
+                {opened.tags?.length > 0 && (
+                  <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap', marginTop: 8 }}>
+                    {opened.tags.map(t => <span key={t} className="tag">{t}</span>)}
+                  </div>
+                )}
+
+                {!a && (
+                  <div className="empty">Audit chybí — pravděpodobně historický záznam před zavedením audit flow.</div>
+                )}
+              </div>
+
+              {/* Patička */}
+              <div className="modal-footer" style={{ flexShrink: 0, borderTop: '1px solid var(--border)', padding: '12px 24px' }}>
+                <div style={{ flex: 1 }} />
+                <button className="btn btn-ghost btn-sm" onClick={() => setOpenId(null)}>Zavřít</button>
+              </div>
             </div>
           </div>
-        </div>
-      )}
+        )
+      })()}
 
       {/* ===== USE CASE DETAIL MODAL ===== */}
       {openedUc && (
