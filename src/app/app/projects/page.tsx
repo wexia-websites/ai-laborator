@@ -34,10 +34,13 @@ type Project = {
 
 const EMPTY_FORM = {
   title: '', description: '', client: '', team: '', duration: '', tools_used: '',
+  start_date: '', end_date: '', project_type: 'internal',
   project_goal: '', what_worked: '', what_failed: '', lessons_learned: '',
   avoid_next_time: '', process_that_worked: '', ai_contribution: '',
+  challenges: '', recommendations: '', reusable: '',
   overall_rating: '', would_repeat: '',
 }
+const EMPTY_TOOL_RATING = () => ({ tool: '', rating: '', note: '' })
 
 function Section({ title }: { title: string }) {
   return (
@@ -73,6 +76,7 @@ export default function ProjectsPage() {
   const [saving, setSaving] = useState(false)
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null)
   const [activeFilter, setActiveFilter] = useState<'ongoing' | 'completed' | 'review' | 'draft' | null>(null)
+  const [toolRatings, setToolRatings] = useState<{tool: string; rating: string; note: string}[]>([])
 
   const load = () => {
     supabase.from('projects').select('*').order('created_at', { ascending: false })
@@ -88,12 +92,17 @@ export default function ProjectsPage() {
     setForm({
       title: p.title ?? '', description: p.description ?? '', client: p.client ?? '',
       team: p.team ?? '', duration: '', tools_used: p.tools_used ?? '',
+      start_date: p.start_date ?? '', end_date: p.end_date ?? '',
+      project_type: p.project_type ?? 'internal',
       project_goal: p.project_goal ?? '', what_worked: p.what_worked ?? '',
       what_failed: p.what_failed ?? '', lessons_learned: p.lessons_learned ?? '',
       avoid_next_time: p.avoid_next_time ?? '', process_that_worked: p.process_that_worked ?? '',
       ai_contribution: p.ai_contribution ?? '',
-      overall_rating: p.overall_rating?.toString() ?? '', would_repeat: p.would_repeat ?? '',
+      challenges: p.challenges ?? '', recommendations: p.recommendations ?? '',
+      reusable: p.reusable ?? '', overall_rating: p.overall_rating?.toString() ?? '',
+      would_repeat: p.would_repeat ?? '',
     })
+    setToolRatings((p.tool_ratings ?? []).map(tr => ({ tool: tr.tool, rating: tr.rating.toString(), note: tr.note ?? '' })))
     setEditingId(p.id)
     setSelected(null)
     setShowForm(true)
@@ -106,10 +115,15 @@ export default function ProjectsPage() {
       title: form.title, description: form.description || null,
       client: form.client || null, team: form.team || null,
       duration: form.duration || null, tools_used: form.tools_used || null,
+      start_date: form.start_date || null, end_date: form.end_date || null,
+      project_type: form.project_type || null,
       project_goal: form.project_goal || null, what_worked: form.what_worked || null,
       what_failed: form.what_failed || null, lessons_learned: form.lessons_learned || null,
       avoid_next_time: form.avoid_next_time || null, process_that_worked: form.process_that_worked || null,
       ai_contribution: form.ai_contribution || null,
+      challenges: form.challenges || null, recommendations: form.recommendations || null,
+      reusable: form.reusable || null,
+      tool_ratings: toolRatings.filter(r => r.tool.trim()).map(r => ({ tool: r.tool.trim(), rating: Number(r.rating) || 0, note: r.note || undefined })),
       overall_rating: form.overall_rating ? Number(form.overall_rating) : null,
       would_repeat: form.would_repeat || null,
     }
@@ -127,6 +141,7 @@ export default function ProjectsPage() {
     setShowForm(false)
     setEditingId(null)
     setForm(EMPTY_FORM)
+    setToolRatings([])
   }
 
   const deleteProject = async (id: string) => {
@@ -279,7 +294,7 @@ export default function ProjectsPage() {
       <div className="page-header">
         <div><h1>Projekty</h1><p>Zpětná analýza projektů kde byla použita AI.</p></div>
         <div className="page-actions">
-          <button className="btn btn-outline" onClick={() => { setEditingId(null); setForm(EMPTY_FORM); setShowForm(true) }}>+ Vyplnit ručně</button>
+          <button className="btn btn-outline" onClick={() => { setEditingId(null); setForm(EMPTY_FORM); setToolRatings([]); setShowForm(true) }}>+ Vyplnit ručně</button>
           <button className="btn btn-primary" onClick={() => router.push('/app/chat?mode=project')}>+ Nový projekt (chat)</button>
         </div>
       </div>
@@ -356,7 +371,7 @@ export default function ProjectsPage() {
       {showForm && (
         <div className="modal-bg open" style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(4px)', WebkitBackdropFilter: 'blur(4px)', zIndex: 100, padding: 20, boxSizing: 'border-box' }} onClick={e => e.target === e.currentTarget && setShowForm(false)}>
           <div className="modal" style={{ width: '90vw', maxWidth: 860, maxHeight: '90vh', display: 'flex', flexDirection: 'column' }}>
-            <button className="modal-close" onClick={() => { setShowForm(false); setEditingId(null); setForm(EMPTY_FORM) }}>×</button>
+            <button className="modal-close" onClick={() => { setShowForm(false); setEditingId(null); setForm(EMPTY_FORM); setToolRatings([]) }}>×</button>
             <div className="modal-header"><div className="modal-title">{editingId ? 'Upravit projekt' : 'Vyplnit projekt ručně'}</div></div>
             <div className="modal-body" style={{ flex: 1, overflowY: 'auto', padding: '0 32px 24px' }}>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
@@ -373,10 +388,26 @@ export default function ProjectsPage() {
                 <input className="form-input" value={form.team} onChange={f('team')} placeholder="Kdo pracoval na projektu?" />
               </div>
               <div className="form-group">
+                <label className="form-label">Datum zahájení</label>
+                <input className="form-input" type="date" value={form.start_date} onChange={f('start_date')} />
+              </div>
+              <div className="form-group">
+                <label className="form-label">Datum ukončení</label>
+                <input className="form-input" type="date" value={form.end_date} onChange={f('end_date')} style={{ color: form.end_date ? undefined : 'var(--text3)' }} />
+                <div style={{ fontSize: 11, color: 'var(--text3)', marginTop: 3 }}>Nevyplňuj pokud projekt stále probíhá</div>
+              </div>
+              <div className="form-group">
+                <label className="form-label">Typ projektu</label>
+                <select className="form-select" value={form.project_type} onChange={f('project_type')}>
+                  <option value="internal">Interní</option>
+                  <option value="external">Externí</option>
+                </select>
+              </div>
+              <div className="form-group">
                 <label className="form-label">Délka projektu</label>
                 <input className="form-input" value={form.duration} onChange={f('duration')} placeholder="např. 3 měsíce" />
               </div>
-              <div className="form-group">
+              <div className="form-group" style={{ gridColumn: '1 / -1' }}>
                 <label className="form-label">AI nástroje</label>
                 <input className="form-input" value={form.tools_used} onChange={f('tools_used')} placeholder="Claude, Midjourney…" />
               </div>
@@ -408,6 +439,10 @@ export default function ProjectsPage() {
 
             <Section title="Poučení" />
             <div className="form-group">
+              <label className="form-label">Největší výzvy během projektu</label>
+              <textarea className="form-textarea" rows={2} value={form.challenges} onChange={f('challenges')} placeholder="Jaké překážky nebo výzvy se vyskytly?" />
+            </div>
+            <div className="form-group">
               <label className="form-label">Lessons learned</label>
               <textarea className="form-textarea" rows={2} value={form.lessons_learned} onChange={f('lessons_learned')} placeholder="Co si odnášíš z projektu?" />
             </div>
@@ -415,13 +450,46 @@ export default function ProjectsPage() {
               <label className="form-label">Příště se vyvarovat</label>
               <textarea className="form-textarea" rows={2} value={form.avoid_next_time} onChange={f('avoid_next_time')} placeholder="Čemu se příště vyhnout?" />
             </div>
+            <div className="form-group">
+              <label className="form-label">Doporučení pro ostatní</label>
+              <textarea className="form-textarea" rows={2} value={form.recommendations} onChange={f('recommendations')} placeholder="Co poradit komukoliv, kdo bude dělat podobný projekt?" />
+            </div>
 
             <Section title="AI příspěvek a hodnocení" />
             <div className="form-group">
               <label className="form-label">Přínos AI</label>
               <textarea className="form-textarea" rows={2} value={form.ai_contribution} onChange={f('ai_contribution')} placeholder="Jak AI přispěla k výsledku?" />
             </div>
+
+            <Section title="Hodnocení nástrojů" />
+            {toolRatings.map((tr, i) => (
+              <div key={i} style={{ display: 'grid', gridTemplateColumns: '1fr 90px 1fr auto', gap: 8, marginBottom: 8, alignItems: 'start' }}>
+                <input className="form-input" placeholder="Název nástroje" value={tr.tool}
+                  onChange={e => setToolRatings(prev => prev.map((r, j) => j === i ? { ...r, tool: e.target.value } : r))} />
+                <select className="form-select" value={tr.rating}
+                  onChange={e => setToolRatings(prev => prev.map((r, j) => j === i ? { ...r, rating: e.target.value } : r))}>
+                  <option value="">—</option>
+                  {[1,2,3,4,5,6,7,8,9,10].map(n => <option key={n} value={n}>{n}/10</option>)}
+                </select>
+                <input className="form-input" placeholder="Krátká poznámka" value={tr.note}
+                  onChange={e => setToolRatings(prev => prev.map((r, j) => j === i ? { ...r, note: e.target.value } : r))} />
+                <button type="button" onClick={() => setToolRatings(prev => prev.filter((_, j) => j !== i))}
+                  style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text3)', fontSize: 20, lineHeight: 1, padding: '8px 4px' }}>×</button>
+              </div>
+            ))}
+            <button type="button" className="btn btn-ghost btn-sm" onClick={() => setToolRatings(prev => [...prev, EMPTY_TOOL_RATING()])}
+              style={{ marginBottom: 16 }}>+ Přidat nástroj</button>
+
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+              <div className="form-group">
+                <label className="form-label">Doporučuješ jako mustr?</label>
+                <select className="form-select" value={form.reusable} onChange={f('reusable')}>
+                  <option value="">—</option>
+                  <option value="yes">Ano, určitě</option>
+                  <option value="yes_with_changes">Ano, s úpravami</option>
+                  <option value="no">Ne</option>
+                </select>
+              </div>
               <div className="form-group">
                 <label className="form-label">Celkové hodnocení (1–10)</label>
                 <select className="form-select" value={form.overall_rating} onChange={f('overall_rating')}>
@@ -429,7 +497,7 @@ export default function ProjectsPage() {
                   {[1,2,3,4,5,6,7,8,9,10].map(n => <option key={n} value={n}>{n}</option>)}
                 </select>
               </div>
-              <div className="form-group">
+              <div className="form-group" style={{ gridColumn: '1 / -1' }}>
                 <label className="form-label">Zopakoval/a bys přístup?</label>
                 <select className="form-select" value={form.would_repeat} onChange={f('would_repeat')}>
                   <option value="">—</option>
@@ -442,7 +510,7 @@ export default function ProjectsPage() {
 
             </div>
             <div className="modal-footer" style={{ flexShrink: 0, borderTop: '1px solid var(--border)', padding: '12px 24px' }}>
-              <button className="btn btn-ghost" onClick={() => { setShowForm(false); setEditingId(null); setForm(EMPTY_FORM) }}>Zrušit</button>
+              <button className="btn btn-ghost" onClick={() => { setShowForm(false); setEditingId(null); setForm(EMPTY_FORM); setToolRatings([]) }}>Zrušit</button>
               <button className="btn btn-primary" onClick={saveManual} disabled={saving || !form.title.trim()}>
                 {saving ? 'Ukládám…' : editingId ? 'Uložit změny' : 'Uložit jako draft'}
               </button>
