@@ -453,7 +453,7 @@ export default function ProjectsPage() {
       {/* DETAIL MODAL */}
       {selected && (
         <div className="modal-bg open" onClick={e => e.target === e.currentTarget && setSelected(null)}>
-          <div className="modal" style={{ width: 680 }}>
+          <div className="modal" style={{ width: 'min(800px, 80vw)' }}>
             <button className="modal-close" onClick={() => setSelected(null)}>×</button>
             <div className="modal-header">
               <div className="modal-title">{selected.title}</div>
