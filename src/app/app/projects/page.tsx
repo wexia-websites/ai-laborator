@@ -455,9 +455,9 @@ export default function ProjectsPage() {
               <textarea className="form-textarea" rows={2} value={form.recommendations} onChange={f('recommendations')} placeholder="Co poradit komukoliv, kdo bude dělat podobný projekt?" />
             </div>
 
-            <Section title="AI příspěvek a hodnocení" />
+            <Section title="Role AI a hodnocení" />
             <div className="form-group">
-              <label className="form-label">Přínos AI</label>
+              <label className="form-label">Jak AI přispěla k výsledku</label>
               <textarea className="form-textarea" rows={2} value={form.ai_contribution} onChange={f('ai_contribution')} placeholder="Jak AI přispěla k výsledku?" />
             </div>
 
