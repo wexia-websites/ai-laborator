@@ -272,10 +272,10 @@ export default function ProjectsPage() {
   }
 
   const filtered = projects.filter(p => {
-    if (activeFilter === 'ongoing'   && !(!p.end_date && p.status !== 'draft')) return false
-    if (activeFilter === 'completed' && !p.end_date) return false
-    if (activeFilter === 'review'    && p.status !== 'review') return false
     if (activeFilter === 'draft'     && p.status !== 'draft') return false
+    if (activeFilter === 'review'    && p.status !== 'review') return false
+    if (activeFilter === 'completed' && !p.end_date) return false
+    if (activeFilter === 'ongoing'   && !(p.status === 'published' && !p.end_date)) return false
     const ql = q.toLowerCase()
     return !q || p.title?.toLowerCase().includes(ql) ||
       p.client?.toLowerCase().includes(ql) ||
@@ -301,10 +301,10 @@ export default function ProjectsPage() {
       <div className="page-body">
         {/* STATS */}
         {projects.length > 0 && (() => {
-          const ongoing   = projects.filter(p => !p.end_date && p.status !== 'draft').length
-          const completed = projects.filter(p => !!p.end_date).length
-          const inReview  = projects.filter(p => p.status === 'review').length
           const drafts    = projects.filter(p => p.status === 'draft').length
+          const inReview  = projects.filter(p => p.status === 'review').length
+          const completed = projects.filter(p => !!p.end_date && p.status !== 'draft' && p.status !== 'review').length
+          const ongoing   = projects.filter(p => p.status === 'published' && !p.end_date).length
           const stats: { label: string; value: number; key: typeof activeFilter }[] = [
             { label: 'Probíhající', value: ongoing,   key: 'ongoing'   },
             { label: 'Dokončené',   value: completed, key: 'completed' },
