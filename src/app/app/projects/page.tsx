@@ -354,11 +354,11 @@ export default function ProjectsPage() {
 
       {/* FORMULÁŘ (nový i editace) */}
       {showForm && (
-        <div className="modal-bg open" onClick={e => e.target === e.currentTarget && setShowForm(false)}>
-          <div className="modal" style={{ width: 620 }}>
+        <div className="modal-bg open" style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(4px)', WebkitBackdropFilter: 'blur(4px)', zIndex: 100, padding: 20, boxSizing: 'border-box' }} onClick={e => e.target === e.currentTarget && setShowForm(false)}>
+          <div className="modal" style={{ width: '90vw', maxWidth: 860, maxHeight: '90vh', display: 'flex', flexDirection: 'column' }}>
             <button className="modal-close" onClick={() => { setShowForm(false); setEditingId(null); setForm(EMPTY_FORM) }}>×</button>
             <div className="modal-header"><div className="modal-title">{editingId ? 'Upravit projekt' : 'Vyplnit projekt ručně'}</div></div>
-
+            <div className="modal-body" style={{ flex: 1, overflowY: 'auto', padding: '0 32px 24px' }}>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
               <div className="form-group" style={{ gridColumn: '1 / -1' }}>
                 <label className="form-label">Název projektu *</label>
@@ -440,7 +440,8 @@ export default function ProjectsPage() {
               </div>
             </div>
 
-            <div className="modal-footer">
+            </div>
+            <div className="modal-footer" style={{ flexShrink: 0, borderTop: '1px solid var(--border)', padding: '12px 24px' }}>
               <button className="btn btn-ghost" onClick={() => { setShowForm(false); setEditingId(null); setForm(EMPTY_FORM) }}>Zrušit</button>
               <button className="btn btn-primary" onClick={saveManual} disabled={saving || !form.title.trim()}>
                 {saving ? 'Ukládám…' : editingId ? 'Uložit změny' : 'Uložit jako draft'}
@@ -452,7 +453,7 @@ export default function ProjectsPage() {
 
       {/* DETAIL MODAL */}
       {selected && (
-        <div className="modal-bg open" onClick={e => e.target === e.currentTarget && setSelected(null)}>
+        <div className="modal-bg open" style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(4px)', WebkitBackdropFilter: 'blur(4px)', zIndex: 100, padding: 20, boxSizing: 'border-box' }} onClick={e => e.target === e.currentTarget && setSelected(null)}>
           <div className="modal modal-detail" style={{ width: '90vw', maxWidth: 860, maxHeight: '90vh', display: 'flex', flexDirection: 'column' }}>
             <button className="modal-close" onClick={() => setSelected(null)}>×</button>
             <div className="modal-header">
@@ -463,7 +464,7 @@ export default function ProjectsPage() {
                 autor: {selected.author_name}
               </div>
             </div>
-
+            <div className="modal-body" style={{ flex: 1, overflowY: 'auto', padding: '0 32px 24px' }}>
             {selected.description && (
               <div style={{ fontSize: 13.5, color: 'var(--text2)', lineHeight: 1.6, marginBottom: 16 }}>{selected.description}</div>
             )}
@@ -531,7 +532,8 @@ export default function ProjectsPage() {
               {selected.would_repeat && <span className={`tag ${selected.would_repeat === 'ano' ? 'tag-green' : selected.would_repeat === 'ne' ? 'tag-red' : 'tag-amber'}`}>Zopakovat: {selected.would_repeat}</span>}
             </div>
 
-            <div className="modal-footer">
+            </div>
+            <div className="modal-footer" style={{ flexWrap: 'wrap', gap: 6, padding: '12px 24px', borderTop: '1px solid var(--border)', flexShrink: 0 }}>
               <button className="btn btn-danger btn-sm" onClick={() => setDeleteConfirm(selected.id)}>Smazat</button>
               <button className="btn btn-outline btn-sm" onClick={() => openEdit(selected)}>Upravit</button>
               <button className="btn btn-ghost btn-sm" onClick={() => exportToHTML(selected)}>⬇ HTML</button>
