@@ -524,99 +524,196 @@ export default function ProjectsPage() {
         <div className="modal-bg open" style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(4px)', WebkitBackdropFilter: 'blur(4px)', zIndex: 100, padding: 20, boxSizing: 'border-box' }} onClick={e => e.target === e.currentTarget && setSelected(null)}>
           <div className="modal modal-detail" style={{ width: '90vw', maxWidth: 860, maxHeight: '90vh', display: 'flex', flexDirection: 'column' }}>
             <button className="modal-close" onClick={() => setSelected(null)}>×</button>
-            <div className="modal-header">
-              <div className="modal-title">{selected.title}</div>
-              <div className="modal-subtitle">
-                {selected.client && <>{selected.client} · </>}
-                {selected.team && <>{selected.team} · </>}
-                autor: {selected.author_name}
-              </div>
-            </div>
-            <div className="modal-body" style={{ flex: 1, overflowY: 'auto', padding: '0 32px 24px' }}>
-            {selected.description && (
-              <div style={{ fontSize: 13.5, color: 'var(--text2)', lineHeight: 1.6, marginBottom: 16 }}>{selected.description}</div>
-            )}
-
-            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 16 }}>
-              {selected.project_type && (
-                <span className="tag">{selected.project_type === 'external' ? 'Externí' : 'Interní'}</span>
-              )}
-              {selected.start_date && (
-                <span className="tag">Od: {new Date(selected.start_date).toLocaleDateString('cs-CZ')}</span>
-              )}
-              {selected.end_date
-                ? <span className="tag tag-green">Do: {new Date(selected.end_date).toLocaleDateString('cs-CZ')}</span>
-                : selected.start_date
-                  ? <span className="tag tag-amber">Probíhá</span>
-                  : null
-              }
-              {selected.reusable && (
-                <span className={`tag ${selected.reusable === 'yes' ? 'tag-green' : selected.reusable === 'no' ? 'tag-red' : 'tag-amber'}`}>
-                  Mustr: {selected.reusable === 'yes' ? 'Ano' : selected.reusable === 'yes_with_changes' ? 'Ano s úpravami' : 'Ne'}
+            {/* HEADER */}
+            <div className="uc-modal-header">
+              <div className="uc-modal-badges">
+                {selected.project_type && (
+                  <span className={`uc-badge ${selected.project_type === 'external' ? 'uc-badge-cat' : 'uc-badge-status'}`}>
+                    {selected.project_type === 'external' ? 'Externí' : 'Interní'}
+                  </span>
+                )}
+                <span className={`uc-badge ${selected.status === 'published' ? 'uc-badge-yes' : selected.status === 'review' ? 'uc-badge-maybe' : 'uc-badge-status'}`}>
+                  {selected.status === 'published' ? '✓ Publikováno' : selected.status === 'review' ? '↺ V revizi' : '○ Draft'}
                 </span>
-              )}
+                {selected.reusable === 'yes' && (
+                  <span className="uc-badge uc-badge-yes">⭐ Doporučený mustr</span>
+                )}
+                {selected.overall_rating && (
+                  <span className={`uc-modal-rating ${selected.overall_rating >= 8 ? 'uc-rating-high' : selected.overall_rating >= 6 ? 'uc-rating-mid' : 'uc-rating-low'}`}>
+                    ⭐ {selected.overall_rating}/10
+                  </span>
+                )}
+              </div>
+              <div className="uc-modal-title">{selected.title}</div>
+              <div className="uc-modal-subtitle">
+                {selected.author_name && <span>👤 {selected.author_name}</span>}
+                {selected.created_at && <span>📅 {new Date(selected.created_at).toLocaleDateString('cs-CZ')}</span>}
+                {selected.start_date && (
+                  <span>🗓 {new Date(selected.start_date).toLocaleDateString('cs-CZ')} → {selected.end_date ? new Date(selected.end_date).toLocaleDateString('cs-CZ') : 'Probíhá'}</span>
+                )}
+              </div>
+              {selected.description && <div className="uc-modal-desc">{selected.description}</div>}
             </div>
 
-            <Section title="Cíl a průběh" />
-            <Field label="Cíl projektu" value={selected.project_goal} />
-            <Field label="AI nástroje" value={selected.tools_used} />
-            <Field label="Přínos AI" value={selected.ai_contribution} />
+            {/* SCROLLOVATELNÝ OBSAH */}
+            <div className="modal-body" style={{ flex: 1, overflowY: 'auto', padding: '0 32px 24px' }}>
 
-            <Section title="Co fungovalo a co ne" />
-            <Field label="Co fungovalo skvěle" value={selected.what_worked} />
-            <Field label="Největší výzvy" value={selected.what_failed} />
-            <Field label="Osvědčený postup" value={selected.process_that_worked} />
-
-            <Section title="Poučení" />
-            <Field label="Lessons learned" value={selected.lessons_learned} />
-            <Field label="Příště se vyvarovat" value={selected.avoid_next_time} />
-            <Field label="Největší výzvy" value={selected.challenges} />
-
-            {selected.recommendations && (
-              <>
-                <Section title="Doporučení pro podobné projekty" />
-                <Field label="Doporučení" value={selected.recommendations} />
-              </>
-            )}
-
-            {selected.tool_ratings && selected.tool_ratings.length > 0 && (
-              <>
-                <Section title="Hodnocení nástrojů" />
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 12 }}>
-                  {selected.tool_ratings.map((tr, i) => (
-                    <div key={i} style={{ display: 'flex', gap: 10, alignItems: 'baseline', fontSize: 13.5 }}>
-                      <span style={{ fontWeight: 600, color: 'var(--text)' }}>{tr.tool}</span>
-                      <span className="tag">⭐ {tr.rating}/10</span>
-                      {tr.note && <span style={{ color: 'var(--text2)' }}>{tr.note}</span>}
-                    </div>
-                  ))}
+              {/* Info karty */}
+              <div className="uc-metrics">
+                <div className="uc-metric">
+                  <div className="uc-metric-label">Klient</div>
+                  <div className="uc-metric-value">{selected.client || '—'}</div>
                 </div>
-              </>
-            )}
+                <div className="uc-metric">
+                  <div className="uc-metric-label">Tým</div>
+                  <div className="uc-metric-value">{selected.team || '—'}</div>
+                </div>
+                <div className="uc-metric">
+                  <div className="uc-metric-label">Délka</div>
+                  <div className="uc-metric-value">{
+                    selected.start_date && selected.end_date
+                      ? (() => {
+                          const days = Math.round((new Date(selected.end_date).getTime() - new Date(selected.start_date).getTime()) / 86400000)
+                          return days < 30 ? `${days} dní` : `${Math.round(days / 30)} měs.`
+                        })()
+                      : selected.start_date && !selected.end_date ? 'Probíhá'
+                      : '—'
+                  }</div>
+                </div>
+              </div>
 
-            <Section title="Finální verdikt" />
-            <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', marginBottom: 12 }}>
-              {selected.overall_rating && <span className="tag">⭐ {selected.overall_rating}/10</span>}
-              {selected.would_repeat && <span className={`tag ${selected.would_repeat === 'ano' ? 'tag-green' : selected.would_repeat === 'ne' ? 'tag-red' : 'tag-amber'}`}>Zopakovat: {selected.would_repeat}</span>}
+              {/* Cíl projektu */}
+              {selected.project_goal && (
+                <>
+                  <div className="uc-section">🎯 Cíl projektu</div>
+                  <div className="uc-field">{selected.project_goal}</div>
+                </>
+              )}
+
+              {/* AI v projektu */}
+              {(selected.tools_used || selected.ai_contribution) && (
+                <>
+                  <div className="uc-section">🤖 AI v projektu</div>
+                  {selected.tools_used && (
+                    <div className="uc-field">
+                      <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--text3)', textTransform: 'uppercase', letterSpacing: '0.4px', marginRight: 6 }}>Nástroje:</span>
+                      {selected.tools_used}
+                    </div>
+                  )}
+                  {selected.ai_contribution && <div className="uc-field">{selected.ai_contribution}</div>}
+                </>
+              )}
+
+              {/* Co fungovalo skvěle */}
+              {selected.what_worked && (
+                <>
+                  <div className="uc-section">✅ Co fungovalo skvěle</div>
+                  <div className="uc-field">{selected.what_worked}</div>
+                </>
+              )}
+
+              {/* Osvědčený postup */}
+              {selected.process_that_worked && (
+                <>
+                  <div className="uc-section">📋 Osvědčený postup</div>
+                  <div className="uc-field">{selected.process_that_worked}</div>
+                </>
+              )}
+
+              {/* Výzvy */}
+              {(selected.what_failed || selected.challenges) && (
+                <>
+                  <div className="uc-section">⚠️ Výzvy a překážky</div>
+                  {selected.what_failed && <div className="uc-field">{selected.what_failed}</div>}
+                  {selected.challenges && <div className="uc-field">{selected.challenges}</div>}
+                </>
+              )}
+
+              {/* Barevné kartičky */}
+              {(selected.lessons_learned || selected.avoid_next_time || selected.recommendations) && (
+                <div className="uc-highlights" style={selected.lessons_learned && selected.avoid_next_time && selected.recommendations ? { gridTemplateColumns: '1fr 1fr 1fr' } : undefined}>
+                  {selected.lessons_learned && (
+                    <div className="uc-highlight uc-highlight-green">
+                      <div className="uc-highlight-icon">🟢</div>
+                      <div className="uc-highlight-label">Lessons learned</div>
+                      <div className="uc-highlight-text">{selected.lessons_learned}</div>
+                    </div>
+                  )}
+                  {selected.avoid_next_time && (
+                    <div className="uc-highlight uc-highlight-yellow">
+                      <div className="uc-highlight-icon">⚠</div>
+                      <div className="uc-highlight-label">Příště se vyvarovat</div>
+                      <div className="uc-highlight-text">{selected.avoid_next_time}</div>
+                    </div>
+                  )}
+                  {selected.recommendations && (
+                    <div className="uc-highlight uc-highlight-blue">
+                      <div className="uc-highlight-icon">💡</div>
+                      <div className="uc-highlight-label">Doporučení pro ostatní</div>
+                      <div className="uc-highlight-text">{selected.recommendations}</div>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Hodnocení nástrojů */}
+              {selected.tool_ratings && selected.tool_ratings.length > 0 && (
+                <>
+                  <div className="uc-section">⭐ Hodnocení nástrojů</div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 16 }}>
+                    {selected.tool_ratings.map((tr, i) => {
+                      const ratingColor = tr.rating >= 8 ? '#16a34a' : tr.rating >= 6 ? '#b45309' : '#ef4444'
+                      return (
+                        <div key={i} style={{ display: 'flex', gap: 12, alignItems: 'center', background: 'rgba(255,255,255,0.04)', border: '1px solid var(--border)', borderRadius: 8, padding: '10px 14px' }}>
+                          <span style={{ fontWeight: 700, color: 'var(--text)', fontSize: 14, flex: 1 }}>{tr.tool}</span>
+                          <span style={{ fontWeight: 800, fontSize: 18, color: ratingColor, minWidth: 44, textAlign: 'right' }}>{tr.rating}/10</span>
+                          {tr.note && <span style={{ color: 'var(--text2)', fontSize: 13, flex: 2 }}>{tr.note}</span>}
+                        </div>
+                      )
+                    })}
+                  </div>
+                </>
+              )}
+
+              {/* Závěr */}
+              {(selected.would_repeat || selected.reusable) && (
+                <>
+                  <div className="uc-section">🏁 Závěr</div>
+                  <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginTop: 4 }}>
+                    {selected.would_repeat && (
+                      <span className={`uc-badge ${selected.would_repeat === 'ano' ? 'uc-badge-yes' : selected.would_repeat === 'ne' ? 'uc-badge-no' : 'uc-badge-maybe'}`} style={{ fontSize: 13, padding: '5px 14px' }}>
+                        {selected.would_repeat === 'ano' ? '✓ Zopakoval/a bych' : selected.would_repeat === 'ne' ? '✗ Nezopakoval/a bych' : '± Zopakoval/a, s úpravami'}
+                      </span>
+                    )}
+                    {selected.reusable && (
+                      <span className={`uc-badge ${selected.reusable === 'yes' ? 'uc-badge-yes' : selected.reusable === 'no' ? 'uc-badge-no' : 'uc-badge-maybe'}`} style={{ fontSize: 13, padding: '5px 14px' }}>
+                        Mustr: {selected.reusable === 'yes' ? '✓ Ano' : selected.reusable === 'yes_with_changes' ? '± S úpravami' : '✗ Ne'}
+                      </span>
+                    )}
+                  </div>
+                </>
+              )}
+
             </div>
 
-            </div>
+            {/* FOOTER */}
             <div className="modal-footer" style={{ flexWrap: 'wrap', gap: 6, padding: '12px 24px', borderTop: '1px solid var(--border)', flexShrink: 0 }}>
-              <button className="btn btn-danger btn-sm" onClick={() => setDeleteConfirm(selected.id)}>Smazat</button>
-              <button className="btn btn-outline btn-sm" onClick={() => openEdit(selected)}>Upravit</button>
               <button className="btn btn-ghost btn-sm" onClick={() => exportToHTML(selected)}>⬇ HTML</button>
               <button className="btn btn-ghost btn-sm" onClick={() => exportToPDF(selected)}>⬇ PDF</button>
               <button className="btn btn-ghost btn-sm" onClick={() => exportToWord(selected)}>⬇ Word</button>
+              <div style={{ flex: 1 }} />
+              <button className="btn btn-danger btn-sm" onClick={() => setDeleteConfirm(selected.id)}>Smazat</button>
+              <button className="btn btn-outline btn-sm" onClick={() => openEdit(selected)}>✏ Upravit</button>
               {selected.status === 'draft' && (
-                <button className="btn btn-primary" onClick={() => sendToReview(selected.id)}>→ Poslat do review</button>
+                <button className="btn btn-primary btn-sm" onClick={() => sendToReview(selected.id)}>→ Review</button>
               )}
               {selected.status === 'review' && canEdit() && (
                 <>
-                  <button className="btn btn-primary" onClick={() => publishProject(selected.id)}>✓ Schválit a publikovat</button>
-                  <button className="btn btn-ghost btn-sm" onClick={() => returnToDraft(selected.id)}>← Vrátit do draftu</button>
+                  <button className="btn btn-primary btn-sm" onClick={() => publishProject(selected.id)}>✓ Publikovat</button>
+                  <button className="btn btn-ghost btn-sm" onClick={() => returnToDraft(selected.id)}>← Draft</button>
                 </>
               )}
-              <button className="btn btn-ghost" onClick={() => setSelected(null)}>Zavřít</button>
+              <button className="btn btn-ghost btn-sm" onClick={() => setSelected(null)}>Zavřít</button>
             </div>
           </div>
         </div>
