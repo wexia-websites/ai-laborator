@@ -72,6 +72,7 @@ export default function ProjectsPage() {
   const [form, setForm] = useState(EMPTY_FORM)
   const [saving, setSaving] = useState(false)
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null)
+  const [activeFilter, setActiveFilter] = useState<'ongoing' | 'completed' | 'review' | 'draft' | null>(null)
 
   const load = () => {
     supabase.from('projects').select('*').order('created_at', { ascending: false })
@@ -256,6 +257,10 @@ export default function ProjectsPage() {
   }
 
   const filtered = projects.filter(p => {
+    if (activeFilter === 'ongoing'   && !(!p.end_date && p.status !== 'draft')) return false
+    if (activeFilter === 'completed' && !p.end_date) return false
+    if (activeFilter === 'review'    && p.status !== 'review') return false
+    if (activeFilter === 'draft'     && p.status !== 'draft') return false
     const ql = q.toLowerCase()
     return !q || p.title?.toLowerCase().includes(ql) ||
       p.client?.toLowerCase().includes(ql) ||
@@ -285,24 +290,35 @@ export default function ProjectsPage() {
           const completed = projects.filter(p => !!p.end_date).length
           const inReview  = projects.filter(p => p.status === 'review').length
           const drafts    = projects.filter(p => p.status === 'draft').length
-          const stats = [
-            { label: 'Probíhající', value: ongoing,   accent: false },
-            { label: 'Dokončené',   value: completed, accent: false },
-            { label: 'V revizi',    value: inReview,  accent: true  },
-            { label: 'Drafty',      value: drafts,    accent: false },
+          const stats: { label: string; value: number; key: typeof activeFilter }[] = [
+            { label: 'Probíhající', value: ongoing,   key: 'ongoing'   },
+            { label: 'Dokončené',   value: completed, key: 'completed' },
+            { label: 'V revizi',    value: inReview,  key: 'review'    },
+            { label: 'Drafty',      value: drafts,    key: 'draft'     },
           ]
           return (
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12, marginBottom: 20 }}>
-              {stats.map(s => (
-                <div key={s.label} style={{
-                  background: 'var(--surface2)',
-                  border: `1px solid ${s.accent ? 'var(--accent, #e02020)' : 'var(--border)'}`,
-                  borderRadius: 10, padding: '14px 16px',
-                }}>
-                  <div style={{ fontSize: 26, fontWeight: 700, color: s.accent ? '#e02020' : 'var(--text)', lineHeight: 1 }}>{s.value}</div>
-                  <div style={{ fontSize: 11, color: 'var(--text3)', marginTop: 4, textTransform: 'uppercase', letterSpacing: '0.5px' }}>{s.label}</div>
-                </div>
-              ))}
+              {stats.map(s => {
+                const isActive  = activeFilter === s.key
+                const isAccent  = s.key === 'review' && s.value > 0
+                const border    = isActive ? '#e02020' : isAccent ? '#e02020' : 'var(--border)'
+                const numColor  = isActive || isAccent ? '#e02020' : 'var(--text)'
+                return (
+                  <div
+                    key={s.label}
+                    onClick={() => setActiveFilter(prev => prev === s.key ? null : s.key)}
+                    style={{
+                      background: isActive ? 'rgba(224,32,32,0.07)' : 'var(--surface2)',
+                      border: `1px solid ${border}`,
+                      borderRadius: 10, padding: '14px 16px',
+                      cursor: 'pointer', transition: 'background 0.15s, border-color 0.15s',
+                    }}
+                  >
+                    <div style={{ fontSize: 26, fontWeight: 700, color: numColor, lineHeight: 1 }}>{s.value}</div>
+                    <div style={{ fontSize: 11, color: isActive ? 'var(--text2)' : 'var(--text3)', marginTop: 4, textTransform: 'uppercase', letterSpacing: '0.5px' }}>{s.label}</div>
+                  </div>
+                )
+              })}
             </div>
           )
         })()}
