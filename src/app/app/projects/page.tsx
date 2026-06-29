@@ -15,14 +15,20 @@ type Project = {
   project_goal: string | null
   what_worked: string | null
   what_failed: string | null
+  challenges: string | null
   lessons_learned: string | null
   avoid_next_time: string | null
   process_that_worked: string | null
   ai_contribution: string | null
+  reusable: string | null
+  recommendations: string | null
   tool_ratings: { tool: string; rating: number; note?: string }[]
   overall_rating: number | null
   would_repeat: string | null
   author_name: string | null
+  start_date: string | null
+  end_date: string | null
+  project_type: string | null
   created_at: string
 }
 
@@ -53,7 +59,7 @@ function Field({ label, value }: { label: string; value?: string | number | null
 
 export default function ProjectsPage() {
   const router = useRouter()
-  const { canAccess, loading: roleLoading } = useRole()
+  const { canAccess, canEdit, loading: roleLoading } = useRole()
   useEffect(() => {
     if (!roleLoading && !canAccess('projects')) router.push('/app/chat')
   }, [roleLoading, canAccess, router])
@@ -134,6 +140,20 @@ export default function ProjectsPage() {
     await supabase.from('projects').update({ status: 'review' }).eq('id', id)
     setProjects(prev => prev.map(p => p.id === id ? { ...p, status: 'review' } : p))
     setSelected(null)
+  }
+
+  const publishProject = async (id: string) => {
+    const { error } = await supabase.from('projects').update({ status: 'published' }).eq('id', id)
+    if (error) { alert('Chyba: ' + error.message); return }
+    setProjects(prev => prev.map(p => p.id === id ? { ...p, status: 'published' } : p))
+    setSelected(prev => prev && prev.id === id ? { ...prev, status: 'published' } : prev)
+  }
+
+  const returnToDraft = async (id: string) => {
+    const { error } = await supabase.from('projects').update({ status: 'draft' }).eq('id', id)
+    if (error) { alert('Chyba: ' + error.message); return }
+    setProjects(prev => prev.map(p => p.id === id ? { ...p, status: 'draft' } : p))
+    setSelected(prev => prev && prev.id === id ? { ...prev, status: 'draft' } : prev)
   }
 
   const generateHTML = (p: Project) => {
@@ -259,6 +279,33 @@ export default function ProjectsPage() {
         </div>
       </div>
       <div className="page-body">
+        {/* STATS */}
+        {projects.length > 0 && (() => {
+          const ongoing   = projects.filter(p => !p.end_date && p.status !== 'draft').length
+          const completed = projects.filter(p => !!p.end_date).length
+          const inReview  = projects.filter(p => p.status === 'review').length
+          const drafts    = projects.filter(p => p.status === 'draft').length
+          const stats = [
+            { label: 'Probíhající', value: ongoing,   accent: false },
+            { label: 'Dokončené',   value: completed, accent: false },
+            { label: 'V revizi',    value: inReview,  accent: true  },
+            { label: 'Drafty',      value: drafts,    accent: false },
+          ]
+          return (
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12, marginBottom: 20 }}>
+              {stats.map(s => (
+                <div key={s.label} style={{
+                  background: 'var(--surface2)',
+                  border: `1px solid ${s.accent ? 'var(--accent, #e02020)' : 'var(--border)'}`,
+                  borderRadius: 10, padding: '14px 16px',
+                }}>
+                  <div style={{ fontSize: 26, fontWeight: 700, color: s.accent ? '#e02020' : 'var(--text)', lineHeight: 1 }}>{s.value}</div>
+                  <div style={{ fontSize: 11, color: 'var(--text3)', marginTop: 4, textTransform: 'uppercase', letterSpacing: '0.5px' }}>{s.label}</div>
+                </div>
+              ))}
+            </div>
+          )
+        })()}
         <input className="search-box" placeholder="Hledat projekty…" value={q} onChange={e => setQ(e.target.value)} />
         {filtered.length === 0
           ? <div className="empty"><span className="empty-icon">📁</span>Žádné projekty. Vytvoř první přes chat.</div>
@@ -405,6 +452,26 @@ export default function ProjectsPage() {
               <div style={{ fontSize: 13.5, color: 'var(--text2)', lineHeight: 1.6, marginBottom: 16 }}>{selected.description}</div>
             )}
 
+            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 16 }}>
+              {selected.project_type && (
+                <span className="tag">{selected.project_type === 'external' ? 'Externí' : 'Interní'}</span>
+              )}
+              {selected.start_date && (
+                <span className="tag">Od: {new Date(selected.start_date).toLocaleDateString('cs-CZ')}</span>
+              )}
+              {selected.end_date
+                ? <span className="tag tag-green">Do: {new Date(selected.end_date).toLocaleDateString('cs-CZ')}</span>
+                : selected.start_date
+                  ? <span className="tag tag-amber">Probíhá</span>
+                  : null
+              }
+              {selected.reusable && (
+                <span className={`tag ${selected.reusable === 'yes' ? 'tag-green' : selected.reusable === 'no' ? 'tag-red' : 'tag-amber'}`}>
+                  Mustr: {selected.reusable === 'yes' ? 'Ano' : selected.reusable === 'yes_with_changes' ? 'Ano s úpravami' : 'Ne'}
+                </span>
+              )}
+            </div>
+
             <Section title="Cíl a průběh" />
             <Field label="Cíl projektu" value={selected.project_goal} />
             <Field label="AI nástroje" value={selected.tools_used} />
@@ -418,6 +485,14 @@ export default function ProjectsPage() {
             <Section title="Poučení" />
             <Field label="Lessons learned" value={selected.lessons_learned} />
             <Field label="Příště se vyvarovat" value={selected.avoid_next_time} />
+            <Field label="Největší výzvy" value={selected.challenges} />
+
+            {selected.recommendations && (
+              <>
+                <Section title="Doporučení pro podobné projekty" />
+                <Field label="Doporučení" value={selected.recommendations} />
+              </>
+            )}
 
             {selected.tool_ratings && selected.tool_ratings.length > 0 && (
               <>
@@ -448,6 +523,12 @@ export default function ProjectsPage() {
               <button className="btn btn-ghost btn-sm" onClick={() => exportToWord(selected)}>⬇ Word</button>
               {selected.status === 'draft' && (
                 <button className="btn btn-primary" onClick={() => sendToReview(selected.id)}>→ Poslat do review</button>
+              )}
+              {selected.status === 'review' && canEdit() && (
+                <>
+                  <button className="btn btn-primary" onClick={() => publishProject(selected.id)}>✓ Schválit a publikovat</button>
+                  <button className="btn btn-ghost btn-sm" onClick={() => returnToDraft(selected.id)}>← Vrátit do draftu</button>
+                </>
               )}
               <button className="btn btn-ghost" onClick={() => setSelected(null)}>Zavřít</button>
             </div>

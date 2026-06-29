@@ -73,6 +73,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   })
 
   const { role, loading: roleLoading, canAccess } = useRole()
+  const [userMenuOpen, setUserMenuOpen] = useState(false)
 
   useEffect(() => {
     document.documentElement.setAttribute('data-theme', theme)
@@ -249,64 +250,127 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
             ))}
           </div>
         ))}
-        <div className="sidebar-tip">
-          <strong>Tip</strong><br />
-          Napiš popis v <strong>Chatu</strong> → AI se doptá → uloží use case. Nebo claimni nástroj z <strong>Inboxu</strong>.
+        {/* Help ikonka */}
+        <div style={{ marginTop: 'auto', padding: '8px 10px 0' }}>
+          <button
+            title="Nápověda"
+            onClick={() => router.push('/app/help')}
+            style={{
+              background: 'none', border: 'none', cursor: 'pointer',
+              display: 'flex', alignItems: 'center', gap: 8,
+              padding: '6px 8px', borderRadius: 8, width: '100%',
+              color: 'var(--text3)', fontSize: 13, fontFamily: 'inherit',
+              transition: 'color 0.12s, background 0.12s',
+              whiteSpace: 'nowrap',
+            }}
+            onMouseEnter={e => { e.currentTarget.style.color = 'var(--text)'; e.currentTarget.style.background = 'var(--surface3)' }}
+            onMouseLeave={e => { e.currentTarget.style.color = 'var(--text3)'; e.currentTarget.style.background = 'none' }}
+          >
+            <span style={{
+              width: 18, height: 18, borderRadius: '50%',
+              border: '1.5px solid currentColor',
+              display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+              fontSize: 11, fontWeight: 700, flexShrink: 0, lineHeight: 1,
+            }}>?</span>
+            {sidebarOpen && <span>Nápověda</span>}
+          </button>
         </div>
 
-        {/* User info + avatar */}
-        <div style={{ borderTop: '1px solid var(--border)', marginTop: 'auto' }}>
-          {/* Klikatelný blok → nastavení */}
+        {/* Patička — avatar + dropdown */}
+        <div style={{ borderTop: '1px solid var(--border)', marginTop: 8, position: 'relative', zIndex: 1 }}>
           <div
-            onClick={() => router.push('/app/settings')}
-            style={{ display: 'flex', flexDirection: 'column', gap: 4, padding: 12, cursor: 'pointer', borderRadius: 8, transition: 'background 0.15s', margin: '4px 4px 0' }}
-            onMouseEnter={e => (e.currentTarget.style.background = 'var(--card)')}
-            onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
+            onClick={() => setUserMenuOpen(o => !o)}
+            style={{
+              display: 'flex', alignItems: 'center', gap: 8,
+              padding: '10px 12px', cursor: 'pointer', borderRadius: 8,
+              margin: '4px 4px 4px', transition: 'background 0.15s',
+              background: userMenuOpen ? 'var(--surface3)' : 'transparent',
+            }}
+            onMouseEnter={e => { if (!userMenuOpen) e.currentTarget.style.background = 'var(--surface2)' }}
+            onMouseLeave={e => { if (!userMenuOpen) e.currentTarget.style.background = 'transparent' }}
           >
-            {/* Řádek 1: Avatar + Jméno + Theme toggle */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              {avatarUrl ? (
-                <img src={avatarUrl} alt="avatar"
-                  style={{ width: 32, height: 32, borderRadius: '50%', objectFit: 'cover', flexShrink: 0, border: '1px solid var(--border)' }} />
-              ) : (
-                <div style={{
-                  width: 32, height: 32, borderRadius: '50%', background: '#e02020', flexShrink: 0,
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  fontSize: 12, color: '#fff', fontWeight: 700,
-                }}>
-                  {initials}
-                </div>
-              )}
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--text)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                  {displayName}
-                </div>
-              </div>
-              {/* Theme toggle – zastaví propagaci kliknutí na settings */}
-              <button
-                onClick={e => { e.stopPropagation(); toggleTheme() }}
-                title={theme === 'dark' ? 'Světlý režim' : 'Tmavý režim'}
-                style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 12, lineHeight: 1, padding: '2px 4px', borderRadius: 4, color: 'var(--text3)', whiteSpace: 'nowrap', flexShrink: 0 }}
-              >
-                {sidebarOpen
-                  ? (theme === 'dark' ? '☀️ Světlý' : '🌙 Tmavý')
-                  : (theme === 'dark' ? '☀️' : '🌙')}
-              </button>
-            </div>
-            {/* Řádek 2: Role badge */}
-            {role && (
-              <div style={{ fontSize: 11, color: 'var(--text3)', paddingLeft: 40 }}>
-                {ROLE_LABELS[role]}
+            {avatarUrl ? (
+              <img src={avatarUrl} alt="avatar"
+                style={{ width: 30, height: 30, borderRadius: '50%', objectFit: 'cover', flexShrink: 0, border: '1px solid var(--border)' }} />
+            ) : (
+              <div style={{
+                width: 30, height: 30, borderRadius: '50%', background: '#e02020', flexShrink: 0,
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                fontSize: 12, color: '#fff', fontWeight: 700,
+              }}>
+                {initials}
               </div>
             )}
+            {sidebarOpen && (
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--text)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                  {displayName}
+                </div>
+                {role && (
+                  <div style={{ fontSize: 11, color: 'var(--text3)' }}>
+                    {ROLE_LABELS[role]}
+                  </div>
+                )}
+              </div>
+            )}
+            {sidebarOpen && (
+              <span style={{ color: 'var(--text3)', fontSize: 10, flexShrink: 0, transition: 'transform 0.15s', transform: userMenuOpen ? 'rotate(180deg)' : 'none' }}>▲</span>
+            )}
           </div>
-          {/* Řádek 3: Odhlásit */}
-          <div style={{ padding: '4px 12px 10px', display: 'flex', alignItems: 'center' }}>
-            <button className="btn btn-ghost btn-xs"
-              onClick={async () => { await supabase.auth.signOut(); router.replace('/login') }}>
-              Odhlásit
-            </button>
-          </div>
+
+          {/* Dropdown menu */}
+          {userMenuOpen && (
+            <div style={{
+              position: 'absolute', bottom: '100%', left: 4, right: 4,
+              background: 'var(--surface2)', border: '1px solid var(--border)',
+              borderRadius: 10, padding: 4, boxShadow: '0 -8px 24px rgba(0,0,0,0.3)',
+              zIndex: 100,
+            }}>
+              <button
+                onClick={e => { e.stopPropagation(); toggleTheme() }}
+                style={{
+                  width: '100%', background: 'none', border: 'none', cursor: 'pointer',
+                  display: 'flex', alignItems: 'center', gap: 8,
+                  padding: '8px 10px', borderRadius: 7, color: 'var(--text2)',
+                  fontSize: 13, fontFamily: 'inherit', transition: 'background 0.1s',
+                }}
+                onMouseEnter={e => (e.currentTarget.style.background = 'var(--surface3)')}
+                onMouseLeave={e => (e.currentTarget.style.background = 'none')}
+              >
+                <span>{theme === 'dark' ? '☀️' : '🌙'}</span>
+                <span>{theme === 'dark' ? 'Světlý režim' : 'Tmavý režim'}</span>
+              </button>
+              <button
+                onClick={e => { e.stopPropagation(); setUserMenuOpen(false); router.push('/app/settings') }}
+                style={{
+                  width: '100%', background: 'none', border: 'none', cursor: 'pointer',
+                  display: 'flex', alignItems: 'center', gap: 8,
+                  padding: '8px 10px', borderRadius: 7, color: 'var(--text2)',
+                  fontSize: 13, fontFamily: 'inherit', transition: 'background 0.1s',
+                }}
+                onMouseEnter={e => (e.currentTarget.style.background = 'var(--surface3)')}
+                onMouseLeave={e => (e.currentTarget.style.background = 'none')}
+              >
+                <span>⚙</span>
+                <span>Nastavení profilu</span>
+              </button>
+              <div style={{ height: 1, background: 'var(--border)', margin: '4px 0' }} />
+              <button
+                onClick={async e => { e.stopPropagation(); await supabase.auth.signOut(); router.replace('/login') }}
+                style={{
+                  width: '100%', background: 'none', border: 'none', cursor: 'pointer',
+                  display: 'flex', alignItems: 'center', gap: 8,
+                  padding: '8px 10px', borderRadius: 7, color: '#e02020',
+                  fontSize: 13, fontFamily: 'inherit', transition: 'background 0.1s',
+                }}
+                onMouseEnter={e => (e.currentTarget.style.background = 'var(--accent-bg)')}
+                onMouseLeave={e => (e.currentTarget.style.background = 'none')}
+              >
+                <span>→</span>
+                <span>Odhlásit se</span>
+              </button>
+            </div>
+          )}
         </div>
       </nav>
       <main className="main">{children}</main>

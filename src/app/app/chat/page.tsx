@@ -21,6 +21,14 @@ type Attachment = {
 
 const IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/gif', 'image/webp']
 
+const PROJECT_KEYWORDS = [
+  'zaznamenat projekt', 'nový projekt', 'zpětná vazba na projekt',
+  'zdokumentovat projekt', 'projekt s ai', 'ai projekt',
+  'retrospektiva projektu', 'dokumentace projektu',
+  'chci projekt', 'přidat projekt', 'retrospektiva',
+  'chci zaznamenat', 'chci zdokumentovat',
+]
+
 function md(text: string) {
   const lines = text.split('\n')
   const out: string[] = []
@@ -203,6 +211,13 @@ function ChatPageInner() {
     if ((!userText && !attachment) || loading) return
     setInput('')
 
+    // Auto-detect project mode from typed keywords
+    let activeMode = overrideMode ?? mode
+    if (activeMode === 'chat' && userText && PROJECT_KEYWORDS.some(kw => userText.toLowerCase().includes(kw))) {
+      activeMode = 'project'
+      setMode('project')
+    }
+
     const displayText = userText || `📎 ${attachment!.name}`
     const next: Message[] = [...messages, { role: 'user', content: displayText }]
     setMessages(next)
@@ -245,7 +260,7 @@ function ChatPageInner() {
       const res = await fetch('/api/chat-db', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         signal: abortControllerRef.current.signal,
-        body: JSON.stringify({ messages: apiMessages, mode: overrideMode ?? mode })
+        body: JSON.stringify({ messages: apiMessages, mode: activeMode })
       })
       const data = await res.json()
       if (!res.ok || data.error) throw new Error(data.error ?? `HTTP ${res.status}`)
@@ -569,7 +584,7 @@ function ChatPageInner() {
                   fontSize: 14, fontFamily: 'inherit',
                   resize: 'none', outline: 'none',
                   lineHeight: '24px', transition: 'border-color 0.15s',
-                  overflowY: 'auto',
+                  overflowY: 'hidden',
                 }}
               />
               <button
