@@ -39,8 +39,8 @@ const WF_CARDS = [
     href: '/app/inbox',
     btnLabel: 'Otevřít inbox',
     icon: '📥',
-    accentColor: '#fff',
-    bg: '#C0392B',
+    accentColor: '#3b82f6',
+    bg: 'rgba(59,130,246,0.07)',
   },
   {
     title: 'Claim → Test → Draft',
@@ -48,8 +48,8 @@ const WF_CARDS = [
     href: '/app/claimboard',
     btnLabel: 'Moje claimy',
     icon: '✎',
-    accentColor: '#fff',
-    bg: '#1A6B3A',
+    accentColor: '#22c55e',
+    bg: 'rgba(34,197,94,0.07)',
   },
   {
     title: 'Chat asistent',
@@ -57,8 +57,8 @@ const WF_CARDS = [
     href: '/app/chat',
     btnLabel: 'Otevřít chat',
     icon: '💬',
-    accentColor: '#fff',
-    bg: '#1A3A5C',
+    accentColor: '#e02020',
+    bg: 'rgba(224,32,32,0.07)',
   },
   {
     title: 'Projekty',
@@ -66,8 +66,8 @@ const WF_CARDS = [
     href: '/app/projects',
     btnLabel: 'Otevřít projekty',
     icon: '📁',
-    accentColor: '#fff',
-    bg: '#5C3A1A',
+    accentColor: '#8b5cf6',
+    bg: 'rgba(139,92,246,0.07)',
   },
 ]
 
@@ -206,18 +206,21 @@ export default function Dashboard() {
                 e.currentTarget.style.boxShadow = ''
               }}
             >
-              <div style={{ fontSize: 26, marginBottom: 10, lineHeight: 1 }}>
+              <div style={{
+                fontSize: 26, marginBottom: 10,
+                color: w.accentColor, lineHeight: 1,
+              }}>
                 {w.icon}
               </div>
-              <h3 style={{ marginBottom: 6, color: '#fff' }}>{w.title}</h3>
-              <p style={{ color: 'rgba(255,255,255,0.78)' }}>{w.desc}</p>
+              <h3 style={{ marginBottom: 6 }}>{w.title}</h3>
+              <p>{w.desc}</p>
               <div className="wf-card-btns">
                 <button
                   className="btn btn-sm"
                   style={{
-                    background: 'rgba(255,255,255,0.18)',
+                    background: w.accentColor,
                     color: '#fff',
-                    border: '1px solid rgba(255,255,255,0.28)',
+                    border: 'none',
                     fontWeight: 600,
                   }}
                   onClick={() => router.push(w.href)}
