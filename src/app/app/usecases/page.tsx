@@ -629,26 +629,18 @@ function UseCasesContent() {
               {(() => {
                 const s = selected as any
                 const rating = s.rating as number | null
+                const ratingClass = !rating ? '' : rating >= 8 ? 'uc-rating-high' : rating >= 6 ? 'uc-rating-mid' : 'uc-rating-low'
                 const recBadge = s.recommended === 'ano' ? 'uc-badge-yes' : s.recommended === 'ne' ? 'uc-badge-no' : s.recommended === 'možná' ? 'uc-badge-maybe' : ''
                 const recLabel = s.recommended === 'ano' ? '✓ Doporučeno' : s.recommended === 'ne' ? '✗ Nedoporučeno' : s.recommended === 'možná' ? '? Možná' : ''
                 const effortBadge = selected.effort === 'low' ? 'uc-badge-effort-low' : selected.effort === 'medium' ? 'uc-badge-effort-med' : selected.effort === 'high' ? 'uc-badge-effort-high' : ''
                 const effortLabel = selected.effort === 'low' ? 'Nízká náročnost' : selected.effort === 'medium' ? 'Střední náročnost' : selected.effort === 'high' ? 'Vysoká náročnost' : ''
-                const ratingColor = !rating ? 'var(--text)' : rating >= 8 ? '#22c55e' : rating >= 6 ? '#f59e0b' : '#ef4444'
                 return (
                   <>
-                    <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 16, marginBottom: 10 }}>
-                      <div className="uc-modal-badges" style={{ margin: 0 }}>
-                        {s.category && <span className="uc-badge uc-badge-cat">{s.category}</span>}
-                        {recBadge && <span className={`uc-badge ${recBadge}`}>{recLabel}</span>}
-                        {effortBadge && <span className={`uc-badge ${effortBadge}`}>{effortLabel}</span>}
-                      </div>
-                      {rating ? (
-                        <div style={{ flexShrink: 0, display: 'flex', alignItems: 'baseline', gap: 3 }}>
-                          <span style={{ fontSize: 15, lineHeight: 1, marginRight: 2 }}>★</span>
-                          <span style={{ fontSize: 32, fontWeight: 800, lineHeight: 1, color: ratingColor }}>{rating}</span>
-                          <span style={{ fontSize: 15, color: 'var(--text3)', fontWeight: 500 }}>/10</span>
-                        </div>
-                      ) : null}
+                    <div className="uc-modal-badges">
+                      {s.category && <span className={`uc-badge uc-badge-cat`}>{s.category}</span>}
+                      {recBadge && <span className={`uc-badge ${recBadge}`}>{recLabel}</span>}
+                      {effortBadge && <span className={`uc-badge ${effortBadge}`}>{effortLabel}</span>}
+                      {rating && <span className={`uc-modal-rating ${ratingClass}`}>⭐ {rating}/10</span>}
                     </div>
                     <div className="uc-modal-title">{selected.title}</div>
                     <div className="uc-modal-subtitle">
@@ -666,75 +658,69 @@ function UseCasesContent() {
             <div className="modal-body" style={{ flex: 1, overflowY: 'auto', padding: '0 32px 24px' }}>
               {(() => {
                 const s = selected as any
-                const cardBase: React.CSSProperties = { background: 'var(--surface2)', borderRadius: 8, padding: '12px 16px' }
-                const sectionLabel: React.CSSProperties = { fontSize: 10, fontWeight: 700, color: 'var(--text3)', textTransform: 'uppercase', letterSpacing: '0.6px', marginBottom: 6 }
                 return (
                   <>
-                    {/* Info karty — Náročnost / Dopad / Confidence */}
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 10, marginBottom: 16 }}>
-                      <div style={{ ...cardBase, borderLeft: '4px solid var(--accent)' }}>
-                        <div style={sectionLabel}>Náročnost</div>
-                        <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--text)' }}>
-                          {selected.effort === 'low' ? 'Nízká' : selected.effort === 'medium' ? 'Střední' : selected.effort === 'high' ? 'Vysoká' : '—'}
+                    {/* Metriky */}
+                    <div className="uc-metrics">
+                      <div className="uc-metric">
+                        <div className="uc-metric-label">Náročnost</div>
+                        <div className="uc-metric-value">
+                          {selected.effort === 'low' ? '🟢 Nízká' : selected.effort === 'medium' ? '🟡 Střední' : selected.effort === 'high' ? '🔴 Vysoká' : '—'}
                         </div>
                       </div>
-                      <div style={{ ...cardBase, borderLeft: '4px solid #1E8449' }}>
-                        <div style={sectionLabel}>Dopad</div>
-                        <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--text)' }}>
-                          {selected.impact === 'low' ? 'Nízký' : selected.impact === 'medium' ? 'Střední' : selected.impact === 'high' ? 'Vysoký' : '—'}
+                      <div className="uc-metric">
+                        <div className="uc-metric-label">Dopad</div>
+                        <div className="uc-metric-value">
+                          {selected.impact === 'low' ? '↘ Nízký' : selected.impact === 'medium' ? '→ Střední' : selected.impact === 'high' ? '↗ Vysoký' : '—'}
                         </div>
                       </div>
-                      <div style={{ ...cardBase, borderLeft: '4px solid #1A5276' }}>
-                        <div style={sectionLabel}>Confidence</div>
-                        <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--text)' }}>
-                          {selected.confidence_score > 0 ? `${selected.confidence_score} %` : '—'}
-                        </div>
+                      <div className="uc-metric">
+                        <div className="uc-metric-label">Confidence</div>
+                        <div className="uc-metric-value">{selected.confidence_score > 0 ? `${selected.confidence_score} %` : '—'}</div>
                       </div>
                     </div>
 
-                    {/* Sekce s obsahem — 2 sloupce */}
-                    {(s.purpose || s.best_for_roles || s.pricing || s.similar_tools) && (
-                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 16 }}>
-                        {s.purpose && (
-                          <div style={{ ...cardBase, borderLeft: '3px solid var(--accent)' }}>
-                            <div style={sectionLabel}>🎯 Účel nástroje</div>
-                            <div style={{ fontSize: 13, color: 'var(--text2)', lineHeight: 1.55 }}>{s.purpose}</div>
-                          </div>
-                        )}
-                        {s.best_for_roles && (
-                          <div style={{ ...cardBase, borderLeft: '3px solid #6B3FA0' }}>
-                            <div style={sectionLabel}>👥 Nejlepší pro</div>
-                            <div style={{ fontSize: 13, color: 'var(--text2)', lineHeight: 1.55 }}>{s.best_for_roles}</div>
-                          </div>
-                        )}
-                        {s.pricing && (
-                          <div style={{ ...cardBase, borderLeft: '3px solid #1E8449' }}>
-                            <div style={sectionLabel}>💰 Cena</div>
-                            <div style={{ fontSize: 13, color: 'var(--text2)', lineHeight: 1.55 }}>{s.pricing}</div>
-                          </div>
-                        )}
-                        {s.similar_tools && (
-                          <div style={{ ...cardBase, borderLeft: '3px solid #1A5276' }}>
-                            <div style={sectionLabel}>🔄 Podobné nástroje</div>
-                            <div style={{ fontSize: 13, color: 'var(--text2)', lineHeight: 1.55 }}>{s.similar_tools}</div>
-                          </div>
-                        )}
-                      </div>
+                    {/* Účel + Pro koho + Podobné + Cena */}
+                    {s.purpose && (
+                      <>
+                        <div className="uc-section">🎯 Účel nástroje</div>
+                        <div className="uc-field">{s.purpose}</div>
+                      </>
+                    )}
+                    {s.best_for_roles && (
+                      <>
+                        <div className="uc-section">👥 Nejlepší pro</div>
+                        <div className="uc-field">{s.best_for_roles}</div>
+                      </>
+                    )}
+                    {s.similar_tools && (
+                      <>
+                        <div className="uc-section">🔄 Podobné nástroje</div>
+                        <div className="uc-field">{s.similar_tools}</div>
+                      </>
+                    )}
+                    {s.pricing && (
+                      <>
+                        <div className="uc-section">💰 Cena</div>
+                        <div className="uc-field">{s.pricing}</div>
+                      </>
                     )}
 
-                    {/* Plné barevné karty: Úspora času + Aha moment */}
+                    {/* Zvýrazněné kartičky: Úspora času + Aha moment */}
                     {(s.time_saved || s.aha_moment) && (
-                      <div style={{ display: 'grid', gridTemplateColumns: s.time_saved && s.aha_moment ? '1fr 1fr' : '1fr', gap: 10, marginBottom: 16 }}>
+                      <div className="uc-highlights">
                         {s.time_saved && (
-                          <div style={{ background: '#0D2B1A', border: '1px solid #1E8449', borderRadius: 12, padding: 16 }}>
-                            <div style={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.6px', color: '#4ADE80', marginBottom: 6 }}>⏱ Úspora času</div>
-                            <div style={{ fontSize: 13, color: '#86EFAC', lineHeight: 1.55 }}>{s.time_saved}</div>
+                          <div className="uc-highlight uc-highlight-green">
+                            <div className="uc-highlight-icon">⏱</div>
+                            <div className="uc-highlight-label">Úspora času</div>
+                            <div className="uc-highlight-text">{s.time_saved}</div>
                           </div>
                         )}
                         {s.aha_moment && (
-                          <div style={{ background: '#1A1535', border: '1px solid #4C3D8F', borderRadius: 12, padding: 16 }}>
-                            <div style={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.6px', color: '#A78BFA', marginBottom: 6 }}>✨ Aha! moment</div>
-                            <div style={{ fontSize: 13, color: '#C4B5FD', lineHeight: 1.55 }}>{s.aha_moment}</div>
+                          <div className="uc-highlight uc-highlight-blue">
+                            <div className="uc-highlight-icon">✨</div>
+                            <div className="uc-highlight-label">Aha! moment</div>
+                            <div className="uc-highlight-text">{s.aha_moment}</div>
                           </div>
                         )}
                       </div>
@@ -742,9 +728,9 @@ function UseCasesContent() {
 
                     {/* Onboarding + UI */}
                     {(s.onboarding_score || s.ui_intuitive) && (
-                      <div style={{ ...cardBase, borderLeft: '3px solid #6B3FA0', marginBottom: 12 }}>
-                        <div style={sectionLabel}>⭐ Onboarding · UI</div>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 20, flexWrap: 'wrap' }}>
+                      <>
+                        <div className="uc-section">⭐ Onboarding · UI</div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 14, flexWrap: 'wrap' }}>
                           {s.onboarding_score && (
                             <div>
                               <div style={{ fontSize: 11, color: 'var(--text3)', marginBottom: 4 }}>Onboarding {s.onboarding_score}/5</div>
@@ -762,38 +748,40 @@ function UseCasesContent() {
                             </div>
                           )}
                         </div>
-                      </div>
+                      </>
                     )}
 
                     {/* Výkon AI */}
                     {(s.output_quality || s.hallucinates) && (
-                      <div style={{ ...cardBase, borderLeft: '3px solid #1A5276', marginBottom: 12 }}>
-                        <div style={sectionLabel}>🤖 Výkon AI</div>
-                        {s.output_quality && <div style={{ fontSize: 13, color: 'var(--text2)', lineHeight: 1.55, marginBottom: 8 }}>{s.output_quality}</div>}
+                      <>
+                        <div className="uc-section">🤖 Výkon AI</div>
+                        {s.output_quality && <div className="uc-field">{s.output_quality}</div>}
                         {s.hallucinates && (
-                          <div>
+                          <div style={{ marginBottom: 14 }}>
                             <span style={{ fontSize: 12, color: 'var(--text3)', marginRight: 8 }}>Halucinace:</span>
                             <span className={`uc-halluc-badge ${s.hallucinates === 'ne' ? 'uc-halluc-no' : s.hallucinates === 'ano' ? 'uc-halluc-yes' : 'uc-halluc-sometimes'}`}>
                               {s.hallucinates === 'ne' ? '✓ Nehalucinuje' : s.hallucinates === 'ano' ? '✗ Halucinuje' : '⚠ Občas'}
                             </span>
                           </div>
                         )}
-                      </div>
+                      </>
                     )}
 
-                    {/* Plná barevná karta: Slabiny */}
+                    {/* Varování kartičky: Slabiny + Bezpečnost */}
                     {(s.weaknesses || s.security_risks) && (
-                      <div style={{ display: 'grid', gridTemplateColumns: s.weaknesses && s.security_risks ? '1fr 1fr' : '1fr', gap: 10, marginBottom: 12 }}>
+                      <div className="uc-highlights">
                         {s.weaknesses && (
-                          <div style={{ background: '#2D1500', border: '1px solid #8B4513', borderRadius: 12, padding: 16 }}>
-                            <div style={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.6px', color: '#FB923C', marginBottom: 6 }}>⚠ Slabiny</div>
-                            <div style={{ fontSize: 13, color: '#FCD09A', lineHeight: 1.55 }}>{s.weaknesses}</div>
+                          <div className="uc-highlight uc-highlight-yellow">
+                            <div className="uc-highlight-icon">⚠</div>
+                            <div className="uc-highlight-label">Slabiny</div>
+                            <div className="uc-highlight-text">{s.weaknesses}</div>
                           </div>
                         )}
                         {s.security_risks && (
-                          <div style={{ background: '#2D1500', border: '1px solid #8B4513', borderRadius: 12, padding: 16 }}>
-                            <div style={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.6px', color: '#FB923C', marginBottom: 6 }}>🔒 Bezpečnostní rizika</div>
-                            <div style={{ fontSize: 13, color: '#FCD09A', lineHeight: 1.55 }}>{s.security_risks}</div>
+                          <div className="uc-highlight uc-highlight-red">
+                            <div className="uc-highlight-icon">🔒</div>
+                            <div className="uc-highlight-label">Bezpečnostní rizika</div>
+                            <div className="uc-highlight-text">{s.security_risks}</div>
                           </div>
                         )}
                       </div>
@@ -801,10 +789,10 @@ function UseCasesContent() {
 
                     {/* Limitace */}
                     {s.limitations && (
-                      <div style={{ ...cardBase, borderLeft: '3px solid var(--accent)', marginBottom: 12 }}>
-                        <div style={sectionLabel}>🚧 Limitace</div>
-                        <div style={{ fontSize: 13, color: 'var(--text2)', lineHeight: 1.55 }}>{s.limitations}</div>
-                      </div>
+                      <>
+                        <div className="uc-section">🚧 Limitace</div>
+                        <div className="uc-field">{s.limitations}</div>
+                      </>
                     )}
 
                     {/* Tagy */}
@@ -819,24 +807,21 @@ function UseCasesContent() {
             </div>
 
             {/* Sticky patička */}
-            <div className="modal-footer" style={{ gap: 6, padding: '12px 24px', borderTop: '1px solid var(--border)', flexShrink: 0, justifyContent: 'space-between' }}>
-              <div style={{ display: 'flex', gap: 6 }}>
-                {canEditItem(selected) && (
-                  <>
-                    <button className="btn btn-danger btn-sm" onClick={() => setDeleteConfirm(selected.id)}>Smazat</button>
-                    <button className="btn btn-outline btn-sm" onClick={() => openEdit(selected)}>✏ Upravit</button>
-                    {selected.status === 'draft' && (
-                      <button className="btn btn-primary btn-sm" onClick={() => sendToReview(selected.id)}>→ Review</button>
-                    )}
-                  </>
-                )}
-              </div>
-              <div style={{ display: 'flex', gap: 6 }}>
-                <button className="btn btn-ghost btn-sm" onClick={() => exportToHTML(selected)}>⬇ HTML</button>
-                <button className="btn btn-ghost btn-sm" onClick={() => exportToPDF(selected)}>⬇ PDF</button>
-                <button className="btn btn-ghost btn-sm" onClick={() => exportToWord(selected)}>⬇ Word</button>
-                <button className="btn btn-ghost btn-sm" onClick={() => setSelected(null)}>Zavřít</button>
-              </div>
+            <div className="modal-footer" style={{ flexWrap: 'wrap', gap: 6, padding: '12px 24px', borderTop: '1px solid var(--border)', flexShrink: 0 }}>
+              <button className="btn btn-ghost btn-sm" onClick={() => exportToHTML(selected)}>⬇ HTML</button>
+              <button className="btn btn-ghost btn-sm" onClick={() => exportToPDF(selected)}>⬇ PDF</button>
+              <button className="btn btn-ghost btn-sm" onClick={() => exportToWord(selected)}>⬇ Word</button>
+              <div style={{ flex: 1 }} />
+              {canEditItem(selected) && (
+                <>
+                  <button className="btn btn-danger btn-sm" onClick={() => setDeleteConfirm(selected.id)}>Smazat</button>
+                  <button className="btn btn-outline btn-sm" onClick={() => openEdit(selected)}>✏ Upravit</button>
+                  {selected.status === 'draft' && (
+                    <button className="btn btn-primary btn-sm" onClick={() => sendToReview(selected.id)}>→ Review</button>
+                  )}
+                </>
+              )}
+              <button className="btn btn-ghost btn-sm" onClick={() => setSelected(null)}>Zavřít</button>
             </div>
           </div>
         </div>
