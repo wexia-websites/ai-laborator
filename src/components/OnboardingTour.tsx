@@ -269,12 +269,13 @@ export default function OnboardingTour({ onComplete }: Props) {
   const router = useRouter()
   const pathname = usePathname()
 
-  const [stepIndex, setStepIndex]     = useState(0)
+  const [stepIndex, setStepIndex]       = useState(0)
   const [tryCompleted, setTryCompleted] = useState(false)
-  const [tooltipX, setTooltipX]       = useState<number | null>(null)
-  const [tooltipY, setTooltipY]       = useState<number | null>(null)
-  const [arrow, setArrow]             = useState<ArrowSide | null>(null)
-  const [fading, setFading]           = useState(false)
+  const [tryTimedOut, setTryTimedOut]   = useState(false)
+  const [tooltipX, setTooltipX]         = useState<number | null>(null)
+  const [tooltipY, setTooltipY]         = useState<number | null>(null)
+  const [arrow, setArrow]               = useState<ArrowSide | null>(null)
+  const [fading, setFading]             = useState(false)
 
   const highlightRef   = useRef<HTMLElement | null>(null)
   const pendingNavRef  = useRef<string | null>(null)
@@ -319,31 +320,36 @@ export default function OnboardingTour({ onComplete }: Props) {
       setTooltipX(null); setTooltipY(null); setArrow(null)
       return
     }
-    const r  = el.getBoundingClientRect()
-    const TW = 420, TH = 400, M = 16
-    const vw = window.innerWidth, vh = window.innerHeight
-    const clampX = (v: number) => Math.max(12, Math.min(v, vw - TW - 12))
-    const clampY = (v: number) => Math.max(12, Math.min(v, vh - TH - 12))
+    const r    = el.getBoundingClientRect()
+    const TW   = 420, TH = 420, M = 16
+    const vw   = window.innerWidth, vh = window.innerHeight
+    const EDGE = 16                     // viewport margin
+    const SIDEBAR_END = 228             // min left after sidebar (~220px sidebar + 8px gap)
+    const clampX = (v: number) => Math.max(EDGE, Math.min(v, vw - TW - EDGE))
+    const clampY = (v: number) => Math.max(EDGE, Math.min(v, vh - TH - EDGE))
 
     switch (pos) {
-      case 'right':
-        setTooltipX(Math.min(r.right + M, vw - TW - 12))
+      case 'right': {
+        // Always place after sidebar + gap, never overlap it
+        const rawLeft = r.right + M
+        setTooltipX(Math.max(SIDEBAR_END, Math.min(rawLeft, vw - TW - EDGE)))
         setTooltipY(clampY(r.top + r.height / 2 - TH / 2))
         setArrow('left')
         break
+      }
       case 'left':
-        setTooltipX(Math.max(12, r.left - TW - M))
+        setTooltipX(Math.max(EDGE, r.left - TW - M))
         setTooltipY(clampY(r.top + r.height / 2 - TH / 2))
         setArrow('right')
         break
       case 'bottom':
         setTooltipX(clampX(r.left + r.width / 2 - TW / 2))
-        setTooltipY(Math.min(r.bottom + M, vh - TH - 12))
+        setTooltipY(clampY(r.bottom + M))
         setArrow('top')
         break
       case 'top':
         setTooltipX(clampX(r.left + r.width / 2 - TW / 2))
-        setTooltipY(Math.max(12, r.top - TH - M))
+        setTooltipY(clampY(r.top - TH - M))
         setArrow('bottom')
         break
       default:
@@ -390,8 +396,8 @@ export default function OnboardingTour({ onComplete }: Props) {
     }
   }, [removeHighlight])
 
-  const skipTryMode = () => { setTryCompleted(true); advance() }
-  const prevStep    = () => { if (stepIndex > 0) { setFading(true); setTimeout(() => { setFading(false); setStepIndex(s => s - 1) }, 150) } }
+  const skipTryMode = () => { setTryCompleted(true); setTryTimedOut(false); advance() }
+  const prevStep    = () => { if (stepIndex > 0) { setTryCompleted(false); setTryTimedOut(false); setFading(true); setTimeout(() => { setFading(false); setStepIndex(s => s - 1) }, 150) } }
 
   /* ── Step change effect ── */
   useEffect(() => {
@@ -436,28 +442,69 @@ export default function OnboardingTour({ onComplete }: Props) {
     return () => document.removeEventListener('click', handler, true)
   }, [stepIndex, tryCompleted, advance])
 
-  /* ── tryMode: mutation observer ── */
+  /* ── tryMode: mutation — multi-method chat detection ── */
   useEffect(() => {
     const s = STEPS[stepIndex]
-    if (!s.tryMode || s.tryMode.type !== 'mutation' || !s.tryMode.selector || tryCompleted) return
-    const sel = s.tryMode.selector
+    if (!s.tryMode || s.tryMode.type !== 'mutation' || tryCompleted) return
+
+    const cleanups: Array<() => void> = []
+    let done = false
+    const complete = () => {
+      if (done) return
+      done = true
+      cleanups.forEach(c => c())
+      setTryCompleted(true)
+      setTimeout(() => advance(), 800)
+    }
+
+    // Method 1: MutationObserver — detect new .msg element (user message)
     const observer = new MutationObserver((mutations) => {
       for (const m of mutations) {
         for (const node of Array.from(m.addedNodes)) {
-          if (node instanceof Element) {
-            if (node.matches(sel) || node.querySelector(sel)) {
-              observer.disconnect()
-              setTryCompleted(true)
-              setTimeout(() => advance(), 800)
-              return
-            }
+          if (!(node instanceof Element)) continue
+          // Chat user messages: div.msg.user or div containing .msg
+          if (
+            node.classList.contains('msg') ||
+            node.querySelector?.('.msg') ||
+            node.matches?.('.msg.user')
+          ) {
+            complete(); return
           }
         }
       }
     })
     observer.observe(document.body, { childList: true, subtree: true })
-    return () => observer.disconnect()
+    cleanups.push(() => observer.disconnect())
+
+    // Method 2: Enter key on chat textarea (backup)
+    const ta = document.querySelector('[data-tour-id="chat-input"]') as HTMLTextAreaElement | null
+    if (ta) {
+      const kh = (e: KeyboardEvent) => {
+        if (e.key === 'Enter' && !e.shiftKey) setTimeout(complete, 600)
+      }
+      ta.addEventListener('keydown', kh)
+      cleanups.push(() => ta.removeEventListener('keydown', kh))
+    }
+
+    // Method 3: Submit button click (backup)
+    const submitBtn = ta?.parentElement?.querySelector('button') as HTMLButtonElement | null
+    if (submitBtn) {
+      const ch = () => setTimeout(complete, 600)
+      submitBtn.addEventListener('click', ch)
+      cleanups.push(() => submitBtn.removeEventListener('click', ch))
+    }
+
+    return () => cleanups.forEach(c => c())
   }, [stepIndex, tryCompleted, advance])
+
+  /* ── tryMode: 45s timeout → show "Pokračovat →" ── */
+  useEffect(() => {
+    const s = STEPS[stepIndex]
+    if (!s.tryMode || tryCompleted) return
+    setTryTimedOut(false)
+    const timer = setTimeout(() => setTryTimedOut(true), 45000)
+    return () => clearTimeout(timer)
+  }, [stepIndex, tryCompleted])
 
   /* ── Cleanup ── */
   useEffect(() => () => removeHighlight(), [removeHighlight])
@@ -522,11 +569,21 @@ export default function OnboardingTour({ onComplete }: Props) {
 
       {/* tryMode instruction */}
       {step.tryMode && !tryCompleted && (
-        <div style={{ background: 'var(--surface3)', border: '1px solid var(--accent)', borderRadius: 8, padding: '10px 14px', marginBottom: 16, display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12 }}>
-          <span style={{ fontSize: 13, color: 'var(--text)' }}>{step.tryMode.instruction}</span>
-          <button onClick={skipTryMode} style={{ fontSize: 12, color: 'var(--text3)', background: 'none', border: 'none', cursor: 'pointer', textDecoration: 'underline', whiteSpace: 'nowrap', flexShrink: 0 }}>
-            {step.tryMode.skipLabel}
-          </button>
+        <div style={{ background: 'var(--surface3)', border: '1px solid var(--accent)', borderRadius: 8, padding: '10px 14px', marginBottom: 16 }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12 }}>
+            <span style={{ fontSize: 13, color: 'var(--text)' }}>{step.tryMode.instruction}</span>
+            <button onClick={skipTryMode} style={{ fontSize: 12, color: 'var(--text3)', background: 'none', border: 'none', cursor: 'pointer', textDecoration: 'underline', whiteSpace: 'nowrap', flexShrink: 0 }}>
+              {step.tryMode.skipLabel}
+            </button>
+          </div>
+          {tryTimedOut && (
+            <div style={{ marginTop: 8, paddingTop: 8, borderTop: '1px solid var(--border)' }}>
+              <button onClick={() => { setTryCompleted(true); advance() }}
+                style={{ padding: '6px 16px', borderRadius: 6, border: 'none', background: 'var(--accent)', color: '#fff', fontWeight: 600, cursor: 'pointer', fontSize: 13 }}>
+                Pokračovat →
+              </button>
+            </div>
+          )}
         </div>
       )}
     </>
@@ -566,7 +623,7 @@ export default function OnboardingTour({ onComplete }: Props) {
               ← Zpět
             </button>
           )}
-          {(!step.tryMode || tryCompleted) && (
+          {(!step.tryMode || tryCompleted || tryTimedOut) && (
             <button onClick={advance}
               style={{ padding: '8px 20px', borderRadius: 8, border: 'none', background: 'var(--accent)', color: '#fff', fontWeight: 600, cursor: 'pointer', fontSize: 14 }}>
               Další →
@@ -580,7 +637,7 @@ export default function OnboardingTour({ onComplete }: Props) {
   return (
     <>
       {/* Backdrop — purely visual, never blocks interaction */}
-      <div style={{ position: 'fixed', inset: 0, zIndex: 9998, background: 'rgba(0,0,0,0.82)', pointerEvents: 'none' }} />
+      <div style={{ position: 'fixed', inset: 0, zIndex: 9998, background: 'rgba(0,0,0,0.88)', pointerEvents: 'none' }} />
 
       {/* Tooltip */}
       <div style={{ ...tooltipBaseStyle, ...positionedStyle }}>
