@@ -566,6 +566,7 @@ function ChatPageInner() {
             <div style={{ position: 'relative' }}>
               <textarea
                 ref={textareaRef}
+                data-tour-id="chat-input"
                 placeholder="Napiš zprávu…"
                 value={input}
                 onChange={e => setInput(e.target.value)}

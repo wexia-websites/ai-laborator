@@ -4,6 +4,7 @@ import { useRouter, usePathname } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import { useRole } from '@/lib/useRole'
 import ProfileSetupModal from '@/components/ProfileSetupModal'
+import OnboardingTour from '@/components/OnboardingTour'
 import type { User } from '@supabase/supabase-js'
 
 type NavItem = { id: string; label: string; icon: string; href: string }
@@ -74,6 +75,9 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
 
   const { role, loading: roleLoading, canAccess } = useRole()
   const [userMenuOpen, setUserMenuOpen] = useState(false)
+  const [showTour, setShowTour] = useState(false)
+  const [tourPreview, setTourPreview] = useState(false)
+  const [onboardingCompleted, setOnboardingCompleted] = useState(true)
 
   useEffect(() => {
     document.documentElement.setAttribute('data-theme', theme)
@@ -116,7 +120,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
 
       const { data: profile } = await supabase
         .from('profiles')
-        .select('profile_completed, avatar_url, first_name, last_name')
+        .select('profile_completed, avatar_url, first_name, last_name, onboarding_completed')
         .eq('id', session.user.id)
         .single()
 
@@ -124,6 +128,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
       setAvatarUrl(profile?.avatar_url ?? null)
       setFirstName(profile?.first_name ?? null)
       setLastName(profile?.last_name ?? null)
+      setOnboardingCompleted(profile?.onboarding_completed ?? false)
 
       setLoading(false)
       checkRevisions()
@@ -141,6 +146,16 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
       router.replace('/app/ranking')
     }
   }, [role, roleLoading, pathname, router])
+
+  // Auto-launch onboarding after profile is ready
+  useEffect(() => {
+    if (loading || roleLoading) return
+    if (profileCompleted === false) return // profile setup modal takes priority
+    if (!onboardingCompleted && !showTour) {
+      setTourPreview(false)
+      setShowTour(true)
+    }
+  }, [loading, roleLoading, profileCompleted, onboardingCompleted]) // eslint-disable-line react-hooks/exhaustive-deps
 
   if (loading || roleLoading) return (
     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '100vh', color: '#606060', background: '#0a0a0a' }}>
@@ -241,6 +256,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
             {section.heading && <div style={navHeadingStyle}>{section.heading}</div>}
             {section.items.map(n => (
               <button key={n.id} className={`nav-link ${activeId === n.id ? 'active' : ''}`}
+                data-nav-id={n.id}
                 onClick={() => router.push(n.href)}>
                 <span className="nav-icon">{n.icon}</span>{n.label}
                 {n.id === 'revision' && revisionDueCount > 0 && (
@@ -250,8 +266,27 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
             ))}
           </div>
         ))}
-        {/* Help ikonka */}
+        {/* Průvodce + Help */}
         <div style={{ marginTop: 'auto', padding: '8px 10px 0' }}>
+          {/* Průvodce */}
+          <button
+            title="Průvodce appkou"
+            onClick={() => { setTourPreview(true); setShowTour(true) }}
+            style={{
+              background: 'none', border: 'none', cursor: 'pointer',
+              display: 'flex', alignItems: 'center', gap: 8,
+              padding: '6px 8px', borderRadius: 8, width: '100%',
+              color: 'var(--text3)', fontSize: 13, fontFamily: 'inherit',
+              transition: 'color 0.12s, background 0.12s',
+              whiteSpace: 'nowrap', marginBottom: 2,
+            }}
+            onMouseEnter={e => { e.currentTarget.style.color = 'var(--text)'; e.currentTarget.style.background = 'var(--surface3)' }}
+            onMouseLeave={e => { e.currentTarget.style.color = 'var(--text3)'; e.currentTarget.style.background = 'none' }}
+          >
+            <span style={{ fontSize: 16, flexShrink: 0, width: 18, textAlign: 'center', lineHeight: 1 }}>🧭</span>
+            {sidebarOpen && <span>Průvodce</span>}
+          </button>
+
           <button
             title="Nápověda"
             onClick={() => router.push('/app/help')}
@@ -374,6 +409,17 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         </div>
       </nav>
       <main className="main">{children}</main>
+
+      {showTour && user && (
+        <OnboardingTour
+          userId={user.id}
+          preview={tourPreview}
+          onClose={() => {
+            setShowTour(false)
+            if (!tourPreview) setOnboardingCompleted(true)
+          }}
+        />
+      )}
     </div>
   )
 }

@@ -59,6 +59,7 @@ const WF_CARDS = [
     icon: '💬',
     accentColor: '#e02020',
     bg: 'rgba(224,32,32,0.07)',
+    tourId: 'open-chat',
   },
   {
     title: 'Projekty',
@@ -138,7 +139,7 @@ export default function Dashboard() {
         </div>
         <div className="page-actions">
           <button className="btn btn-outline" onClick={() => router.push('/app/inbox')}>⟳ Discovery</button>
-          <button className="btn btn-primary" onClick={() => router.push('/app/chat')}>+ Nový use case</button>
+          <button className="btn btn-primary" data-tour-id="new-usecase" onClick={() => router.push('/app/chat')}>+ Nový use case</button>
         </div>
       </div>
 
@@ -217,6 +218,7 @@ export default function Dashboard() {
               <div className="wf-card-btns">
                 <button
                   className="btn btn-sm"
+                  {...('tourId' in w && w.tourId ? { 'data-tour-id': w.tourId as string } : {})}
                   style={{
                     background: w.accentColor,
                     color: '#fff',
