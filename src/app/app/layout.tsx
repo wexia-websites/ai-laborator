@@ -77,7 +77,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   const [userMenuOpen, setUserMenuOpen] = useState(false)
   const [showTour, setShowTour] = useState(false)
   const [tourPreview, setTourPreview] = useState(false)
-  const [onboardingCompleted, setOnboardingCompleted] = useState(true)
+  const [onboardingCompleted, setOnboardingCompleted] = useState<boolean | null>(null)
 
   useEffect(() => {
     document.documentElement.setAttribute('data-theme', theme)
@@ -120,7 +120,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
 
       const { data: profile } = await supabase
         .from('profiles')
-        .select('profile_completed, avatar_url, first_name, last_name, onboarding_completed')
+        .select('profile_completed, avatar_url, first_name, last_name')
         .eq('id', session.user.id)
         .single()
 
@@ -128,7 +128,14 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
       setAvatarUrl(profile?.avatar_url ?? null)
       setFirstName(profile?.first_name ?? null)
       setLastName(profile?.last_name ?? null)
-      setOnboardingCompleted(profile?.onboarding_completed ?? false)
+
+      // Separate query — doesn't break main profile load if column missing
+      const { data: obData } = await supabase
+        .from('profiles')
+        .select('onboarding_completed')
+        .eq('id', session.user.id)
+        .single()
+      setOnboardingCompleted(obData?.onboarding_completed ?? false)
 
       setLoading(false)
       checkRevisions()
@@ -150,8 +157,9 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   // Auto-launch onboarding after profile is ready
   useEffect(() => {
     if (loading || roleLoading) return
-    if (profileCompleted === false) return // profile setup modal takes priority
-    if (!onboardingCompleted && !showTour) {
+    if (onboardingCompleted === null) return  // not yet loaded from DB
+    if (profileCompleted === false) return    // profile setup modal takes priority
+    if (onboardingCompleted === false && !showTour) {
       setTourPreview(false)
       setShowTour(true)
     }

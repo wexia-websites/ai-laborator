@@ -346,8 +346,8 @@ export default function OnboardingTour({ userId, onClose, preview = false }: Pro
 
   const handleBack = () => { if (step > 0) setStep(s => s - 1) }
 
-  /* ─ Shared tooltip inner ─ */
-  const TooltipBody = () => (
+  /* ─ Shared tooltip inner — plain function, not a React component ─ */
+  const renderBody = () => (
     <>
       {/* Progress bar */}
       <div style={{ width: '100%', height: 4, background: 'var(--surface3)', borderRadius: 2, marginBottom: 6 }}>
@@ -428,7 +428,7 @@ export default function OnboardingTour({ userId, onClose, preview = false }: Pro
           {!current.welcomeOnly && (
             <button onClick={handleClose} style={{ position: 'absolute', top: 14, right: 16, background: 'none', border: 'none', color: 'var(--text3)', fontSize: 20, cursor: 'pointer', lineHeight: 1 }}>×</button>
           )}
-          <TooltipBody />
+          {renderBody()}
 
           {current.ctaButtons ? (
             <>
@@ -516,7 +516,7 @@ export default function OnboardingTour({ userId, onClose, preview = false }: Pro
         {/* Arrow */}
         {hlRect && <div style={arrowStyle} />}
 
-        <TooltipBody />
+        {renderBody()}
 
         {/* Footer */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 16 }}>
