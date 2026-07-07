@@ -5,6 +5,7 @@ import { supabase } from '@/lib/supabase'
 import { useRole } from '@/lib/useRole'
 import ProfileSetupModal from '@/components/ProfileSetupModal'
 import OnboardingTour from '@/components/OnboardingTour'
+import { markOnboardingComplete } from '@/lib/onboarding'
 import type { User } from '@supabase/supabase-js'
 
 type NavItem = { id: string; label: string; icon: string; href: string }
@@ -76,7 +77,6 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   const { role, loading: roleLoading, canAccess } = useRole()
   const [userMenuOpen, setUserMenuOpen] = useState(false)
   const [showTour, setShowTour] = useState(false)
-  const [tourPreview, setTourPreview] = useState(false)
   const [onboardingCompleted, setOnboardingCompleted] = useState<boolean | null>(null)
 
   useEffect(() => {
@@ -160,7 +160,6 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     if (onboardingCompleted === null) return  // not yet loaded from DB
     if (profileCompleted === false) return    // profile setup modal takes priority
     if (onboardingCompleted === false && !showTour) {
-      setTourPreview(false)
       setShowTour(true)
     }
   }, [loading, roleLoading, profileCompleted, onboardingCompleted]) // eslint-disable-line react-hooks/exhaustive-deps
@@ -279,7 +278,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
           {/* Průvodce */}
           <button
             title="Průvodce appkou"
-            onClick={() => { setTourPreview(true); setShowTour(true) }}
+            onClick={() => setShowTour(true)}
             style={{
               background: 'none', border: 'none', cursor: 'pointer',
               display: 'flex', alignItems: 'center', gap: 8,
@@ -420,11 +419,10 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
 
       {showTour && user && (
         <OnboardingTour
-          userId={user.id}
-          preview={tourPreview}
-          onClose={() => {
+          onComplete={() => {
             setShowTour(false)
-            if (!tourPreview) setOnboardingCompleted(true)
+            setOnboardingCompleted(true)
+            markOnboardingComplete(user.id)
           }}
         />
       )}
