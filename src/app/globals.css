@@ -2001,3 +2001,6 @@ body {
   border: 1px solid rgba(255,255,255,0.10) !important;
   color: #dddddd !important;
 }
+
+/* ── ONBOARDING TOUR ── */
+body.tour-active .sidebar { z-index: 9 !important; }

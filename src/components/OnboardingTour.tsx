@@ -1,9 +1,17 @@
 'use client'
-import { useEffect, useState, useCallback, useRef } from 'react'
+import { useEffect, useState, useRef } from 'react'
 import { useRouter, usePathname } from 'next/navigation'
 import { markOnboardingComplete } from '@/lib/onboarding'
 
 /* ─── Types ─────────────────────────────────────────────── */
+type TryMode = {
+  instruction: string
+  waitFor?: string       // CSS selector — advance when clicked
+  waitForRoute?: string  // advance when URL matches
+  timeoutMs?: number     // ms before showing "Pokračovat →" (default 30000)
+  skipLabel?: string
+}
+
 type TourStep = {
   id: string
   target: string | null
@@ -13,11 +21,12 @@ type TourStep = {
   tip?: string
   position: 'center' | 'right' | 'left' | 'top' | 'bottom'
   navigateTo?: string
-  previewTarget?: string   // secondary highlight after 600 ms
+  previewTarget?: string
   chatExamples?: string[]
   ctaButtons?: { label: string; href: string; primary: boolean }[]
   finishNote?: string
-  welcomeOnly?: boolean    // welcome step — single CTA only
+  welcomeOnly?: boolean
+  tryMode?: TryMode
 }
 
 type Rect = { top: number; left: number; width: number; height: number }
@@ -74,7 +83,7 @@ const STEPS: TourStep[] = [
     navigateTo: '/app/chat',
     position: 'top',
     title: 'Sem napiš co řešíš ✍️',
-    description: 'Chat funguje jako rozhovor. AI se tě postupně doptá na vše potřebné a na konci vytvoří kompletní draft který pak schválíš nebo upravíš.',
+    description: 'Chat funguje jako rozhovor. AI se tě postupně doptá na vše potřebné a na konci vytvoří kompletní draft.',
     bullets: [
       'Po odeslání AI pokládá doplňující otázky',
       'Na konci rozhovoru tlačítko "Uložit jako draft"',
@@ -86,6 +95,12 @@ const STEPS: TourStep[] = [
       'Testoval jsem Midjourney pro tvorbu marketingových obrázků',
       'Chci zaznamenat projekt redesignu webu kde jsme použili AI',
     ],
+    tryMode: {
+      instruction: '✍️ Zkus napsat zprávu do chatu a odeslat ji',
+      waitFor: '[data-tour-id="chat-input"]',
+      timeoutMs: 30000,
+      skipLabel: 'Přeskočit',
+    },
   },
   {
     id: 'inbox',
@@ -101,6 +116,11 @@ const STEPS: TourStep[] = [
       'Výsledek přejde do knihovny "Otestované"',
     ],
     tip: 'Claimnutý nástroj najdeš pak v sekci "Moje práce".',
+    tryMode: {
+      instruction: '🔬 Klikni na "K otestování" v levém menu',
+      waitForRoute: '/app/inbox',
+      skipLabel: 'Přeskočit',
+    },
   },
   {
     id: 'tools-tested',
@@ -133,6 +153,12 @@ const STEPS: TourStep[] = [
       'Po schválení viditelný všem uživatelům',
     ],
     tip: 'Klikni na libovolný use case pro zobrazení plného detailu.',
+    tryMode: {
+      instruction: '📖 Klikni na libovolný use case pro zobrazení detailu',
+      waitFor: '.uc-card',
+      timeoutMs: 30000,
+      skipLabel: 'Přeskočit',
+    },
   },
   {
     id: 'new-usecase',
@@ -147,6 +173,12 @@ const STEPS: TourStep[] = [
       'Obojí vytvoří draft čekající na revizi',
     ],
     tip: 'Doporučujeme Chat — je rychlejší a AI ti pomůže formulovat věci které by tě možná nenapadly.',
+    tryMode: {
+      instruction: '➕ Klikni na tlačítko "+ Nový use case"',
+      waitFor: '[data-tour-id="new-usecase"]',
+      timeoutMs: 30000,
+      skipLabel: 'Přeskočit',
+    },
   },
   {
     id: 'projects',
@@ -206,8 +238,9 @@ const STEPS: TourStep[] = [
 ]
 
 /* ─── Helpers ────────────────────────────────────────────── */
-const PAD = 6
+const PAD = 8
 const TW = 420
+const BG = 'rgba(0,0,0,0.85)'
 
 function fillChatInput(text: string) {
   const el = document.querySelector('[data-tour-id="chat-input"]') as HTMLTextAreaElement | null
@@ -215,9 +248,7 @@ function fillChatInput(text: string) {
   try {
     const setter = Object.getOwnPropertyDescriptor(window.HTMLTextAreaElement.prototype, 'value')?.set
     setter?.call(el, text)
-  } catch {
-    el.value = text
-  }
+  } catch { el.value = text }
   el.dispatchEvent(new Event('input', { bubbles: true }))
   el.focus()
 }
@@ -229,48 +260,34 @@ function getRect(selector: string): Rect | null {
   return { top: r.top, left: r.left, width: r.width, height: r.height }
 }
 
-function computeTooltipPos(hl: Rect, position: TourStep['position']): React.CSSProperties {
+function computeTooltipPos(hl: { top: number; left: number; w: number; h: number }, position: TourStep['position']): React.CSSProperties {
   const GAP = 16
   const vw = typeof window !== 'undefined' ? window.innerWidth : 1440
   const vh = typeof window !== 'undefined' ? window.innerHeight : 900
-  const clampH = (t: number) => Math.max(12, Math.min(t, vh - 320))
+  const clampH = (t: number) => Math.max(12, Math.min(t, vh - 380))
   const clampV = (l: number) => Math.max(12, Math.min(l, vw - TW - 12))
   switch (position) {
-    case 'right':
-      return { top: clampH(hl.top + hl.height / 2 - 150), left: Math.min(hl.left + hl.width + GAP, vw - TW - 12) }
-    case 'left':
-      return { top: clampH(hl.top + hl.height / 2 - 150), left: Math.max(12, hl.left - TW - GAP) }
-    case 'bottom':
-      return { top: Math.min(hl.top + hl.height + GAP, vh - 360), left: clampV(hl.left + hl.width / 2 - TW / 2) }
-    case 'top':
-      return { top: clampH(hl.top - 360 - GAP), left: clampV(hl.left + hl.width / 2 - TW / 2) }
-    default:
-      return {}
+    case 'right':  return { top: clampH(hl.top + hl.h / 2 - 160), left: Math.min(hl.left + hl.w + GAP, vw - TW - 12) }
+    case 'left':   return { top: clampH(hl.top + hl.h / 2 - 160), left: Math.max(12, hl.left - TW - GAP) }
+    case 'bottom': return { top: Math.min(hl.top + hl.h + GAP, vh - 420), left: clampV(hl.left + hl.w / 2 - TW / 2) }
+    case 'top':    return { top: clampH(hl.top - 420 - GAP), left: clampV(hl.left + hl.w / 2 - TW / 2) }
+    default:       return {}
   }
 }
 
 function getArrowStyle(position: TourStep['position']): React.CSSProperties {
   const base: React.CSSProperties = { position: 'absolute', width: 0, height: 0 }
   switch (position) {
-    case 'right':
-      return { ...base, left: -9, top: '50%', transform: 'translateY(-50%)', borderTop: '9px solid transparent', borderBottom: '9px solid transparent', borderRight: '9px solid var(--accent)' }
-    case 'left':
-      return { ...base, right: -9, top: '50%', transform: 'translateY(-50%)', borderTop: '9px solid transparent', borderBottom: '9px solid transparent', borderLeft: '9px solid var(--accent)' }
-    case 'bottom':
-      return { ...base, top: -9, left: '50%', transform: 'translateX(-50%)', borderLeft: '9px solid transparent', borderRight: '9px solid transparent', borderBottom: '9px solid var(--accent)' }
-    case 'top':
-      return { ...base, bottom: -9, left: '50%', transform: 'translateX(-50%)', borderLeft: '9px solid transparent', borderRight: '9px solid transparent', borderTop: '9px solid var(--accent)' }
-    default:
-      return {}
+    case 'right':  return { ...base, left: -9, top: '50%', transform: 'translateY(-50%)', borderTop: '9px solid transparent', borderBottom: '9px solid transparent', borderRight: '9px solid var(--accent)' }
+    case 'left':   return { ...base, right: -9, top: '50%', transform: 'translateY(-50%)', borderTop: '9px solid transparent', borderBottom: '9px solid transparent', borderLeft: '9px solid var(--accent)' }
+    case 'bottom': return { ...base, top: -9, left: '50%', transform: 'translateX(-50%)', borderLeft: '9px solid transparent', borderRight: '9px solid transparent', borderBottom: '9px solid var(--accent)' }
+    case 'top':    return { ...base, bottom: -9, left: '50%', transform: 'translateX(-50%)', borderLeft: '9px solid transparent', borderRight: '9px solid transparent', borderTop: '9px solid var(--accent)' }
+    default:       return {}
   }
 }
 
 /* ─── Component ──────────────────────────────────────────── */
-type Props = {
-  userId: string
-  onClose: () => void
-  preview?: boolean
-}
+type Props = { userId: string; onClose: () => void; preview?: boolean }
 
 export default function OnboardingTour({ userId, onClose, preview = false }: Props) {
   const router = useRouter()
@@ -278,16 +295,45 @@ export default function OnboardingTour({ userId, onClose, preview = false }: Pro
   const [step, setStep] = useState(0)
   const [targetRect, setTargetRect] = useState<Rect | null>(null)
   const [pendingNav, setPendingNav] = useState<string | null>(null)
+  const [tryTimedOut, setTryTimedOut] = useState(false)
   const retryRef = useRef<ReturnType<typeof setInterval> | null>(null)
   const previewTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const tryTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  // Stable ref to advance — avoids stale closure in event listeners
+  const advanceRef = useRef<() => void>(() => {})
 
   const current = STEPS[step]
-  const progress = ((step) / (STEPS.length - 1)) * 100
+  const progress = (step / (STEPS.length - 1)) * 100
 
   const clearRetry = () => { if (retryRef.current) { clearInterval(retryRef.current); retryRef.current = null } }
   const clearPreview = () => { if (previewTimerRef.current) { clearTimeout(previewTimerRef.current); previewTimerRef.current = null } }
+  const clearTryTimer = () => { if (tryTimerRef.current) { clearTimeout(tryTimerRef.current); tryTimerRef.current = null } }
 
-  const startRetry = useCallback((selector: string, afterFound?: () => void) => {
+  const handleClose = async () => {
+    clearRetry(); clearPreview(); clearTryTimer()
+    document.body.classList.remove('tour-active')
+    if (!preview) await markOnboardingComplete(userId)
+    onClose()
+  }
+
+  const handleNext = () => {
+    setTryTimedOut(false)
+    if (step < STEPS.length - 1) setStep(s => s + 1)
+    else handleClose()
+  }
+  const handleBack = () => { if (step > 0) { setTryTimedOut(false); setStep(s => s - 1) } }
+
+  // Keep advance ref up-to-date
+  advanceRef.current = handleNext
+
+  // body class for CSS z-index override
+  useEffect(() => {
+    document.body.classList.add('tour-active')
+    return () => document.body.classList.remove('tour-active')
+  }, [])
+
+  // Find target element with retry
+  const startRetry = (selector: string, afterFound?: () => void) => {
     clearRetry()
     const r = getRect(selector)
     if (r) { setTargetRect(r); afterFound?.(); return }
@@ -298,21 +344,21 @@ export default function OnboardingTour({ userId, onClose, preview = false }: Pro
       if (r2) { clearRetry(); setTargetRect(r2); afterFound?.(); return }
       if (n >= 15) clearRetry()
     }, 200)
-  }, [])
+  }
 
-  const activatePreview = useCallback((previewTarget: string) => {
+  // Activate secondary highlight after delay
+  const activatePreview = (sel: string) => {
     clearPreview()
     previewTimerRef.current = setTimeout(() => {
-      const r = getRect(previewTarget)
+      const r = getRect(sel)
       if (r) setTargetRect(r)
     }, 600)
-  }, [])
+  }
 
-  // Step change
+  // Step change effect
   useEffect(() => {
-    clearRetry()
-    clearPreview()
-    setTargetRect(null)
+    clearRetry(); clearPreview(); clearTryTimer()
+    setTargetRect(null); setTryTimedOut(false)
     if (!current.target) return
 
     if (current.navigateTo && pathname !== current.navigateTo) {
@@ -320,7 +366,6 @@ export default function OnboardingTour({ userId, onClose, preview = false }: Pro
       router.push(current.navigateTo)
       return
     }
-
     startRetry(current.target, current.previewTarget ? () => activatePreview(current.previewTarget!) : undefined)
     return () => { clearRetry(); clearPreview() }
   }, [step]) // eslint-disable-line react-hooks/exhaustive-deps
@@ -333,75 +378,84 @@ export default function OnboardingTour({ userId, onClose, preview = false }: Pro
     startRetry(current.target, current.previewTarget ? () => activatePreview(current.previewTarget!) : undefined)
   }, [pathname]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  const handleClose = async () => {
-    clearRetry(); clearPreview()
-    if (!preview) await markOnboardingComplete(userId)
-    onClose()
-  }
+  // tryMode: click listener
+  useEffect(() => {
+    const tm = current.tryMode
+    if (!tm?.waitFor) return
+    const sels = tm.waitFor.split(',').map(s => s.trim())
+    const handler = (e: MouseEvent) => {
+      const el = e.target as Element | null
+      if (!el) return
+      if (sels.some(sel => { try { return !!el.closest(sel) } catch { return false } })) {
+        advanceRef.current()
+      }
+    }
+    document.addEventListener('click', handler, true)
+    return () => document.removeEventListener('click', handler, true)
+  }, [step]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  const handleNext = () => {
-    if (step < STEPS.length - 1) setStep(s => s + 1)
-    else handleClose()
-  }
+  // tryMode: route listener
+  useEffect(() => {
+    const tm = current.tryMode
+    if (!tm?.waitForRoute) return
+    if (pathname === tm.waitForRoute) advanceRef.current()
+  }, [pathname, step]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  const handleBack = () => { if (step > 0) setStep(s => s - 1) }
+  // tryMode: timeout
+  useEffect(() => {
+    const tm = current.tryMode
+    if (!tm) return
+    clearTryTimer()
+    const ms = tm.timeoutMs ?? 30000
+    tryTimerRef.current = setTimeout(() => setTryTimedOut(true), ms)
+    return clearTryTimer
+  }, [step]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  /* ─ Shared tooltip inner — plain function, not a React component ─ */
+  /* ─ Compute layout ─ */
+  const hlRect = targetRect ?? null
+  const hl = hlRect ? {
+    top: hlRect.top - PAD, left: hlRect.left - PAD,
+    w: hlRect.width + PAD * 2, h: hlRect.height + PAD * 2,
+  } : null
+
+  const tooltipPos = hl ? computeTooltipPos(hl, current.position)
+    : { top: '50%' as unknown as number, left: '50%' as unknown as number, transform: 'translate(-50%,-50%)' }
+  const arrowStyle = getArrowStyle(current.position)
+
+  /* ─ Tooltip content ─ */
   const renderBody = () => (
     <>
       {/* Progress bar */}
       <div style={{ width: '100%', height: 4, background: 'var(--surface3)', borderRadius: 2, marginBottom: 6 }}>
         <div style={{ height: '100%', width: `${progress}%`, background: 'var(--accent)', borderRadius: 2, transition: 'width 0.3s ease' }} />
       </div>
-      <div style={{ fontSize: 11, color: 'var(--text3)', marginBottom: 16 }}>Krok {step + 1} z {STEPS.length}</div>
-
-      {/* Title */}
-      <div style={{ fontSize: 18, fontWeight: 700, color: 'var(--text)', marginBottom: 10, lineHeight: 1.3 }}>{current.title}</div>
-
-      {/* Description */}
+      <div style={{ fontSize: 11, color: 'var(--text3)', marginBottom: 14 }}>Krok {step + 1} z {STEPS.length}</div>
+      <div style={{ fontSize: 18, fontWeight: 700, color: 'var(--text)', marginBottom: 8, lineHeight: 1.3 }}>{current.title}</div>
       <div style={{ fontSize: 14, color: 'var(--text2)', lineHeight: 1.6, marginBottom: current.bullets ? 12 : 0 }}>{current.description}</div>
-
-      {/* Bullets */}
       {current.bullets && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 5, marginBottom: 12 }}>
           {current.bullets.map((b, i) => (
             <div key={i} style={{ display: 'flex', gap: 8, alignItems: 'flex-start', fontSize: 13, color: 'var(--text2)' }}>
-              <span style={{ color: 'var(--accent)', flexShrink: 0, fontSize: 12, marginTop: 2 }}>•</span>
+              <span style={{ color: 'var(--accent)', flexShrink: 0, fontSize: 11, marginTop: 3 }}>•</span>
               <span>{b}</span>
             </div>
           ))}
         </div>
       )}
-
-      {/* Tip */}
       {current.tip && (
-        <div style={{
-          background: 'var(--surface3)', borderLeft: '3px solid var(--accent)',
-          borderRadius: '0 6px 6px 0', padding: '8px 12px',
-          fontSize: 13, color: 'var(--text2)', fontStyle: 'italic', marginBottom: 12, lineHeight: 1.5,
-        }}>
+        <div style={{ background: 'var(--surface3)', borderLeft: '3px solid var(--accent)', borderRadius: '0 6px 6px 0', padding: '8px 12px', fontSize: 13, color: 'var(--text2)', fontStyle: 'italic', marginBottom: 12, lineHeight: 1.5 }}>
           💡 {current.tip}
         </div>
       )}
-
-      {/* Chat examples */}
       {current.chatExamples && (
         <div style={{ marginBottom: 12 }}>
           <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--text3)', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: 7 }}>Zkus napsat například:</div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
             {current.chatExamples.map((ex, i) => (
-              <div
-                key={i}
-                onClick={() => fillChatInput(ex)}
-                style={{
-                  cursor: 'pointer', padding: '7px 10px', borderRadius: 6,
-                  background: 'var(--surface3)', fontSize: 12, color: 'var(--text)',
-                  border: '1px solid var(--border)', lineHeight: 1.45,
-                  transition: 'border-color 0.1s',
-                }}
+              <div key={i} onClick={() => fillChatInput(ex)}
+                style={{ cursor: 'pointer', padding: '7px 10px', borderRadius: 6, background: 'var(--surface3)', fontSize: 12, color: 'var(--text)', border: '1px solid var(--border)', lineHeight: 1.45 }}
                 onMouseEnter={e => (e.currentTarget.style.borderColor = 'var(--accent)')}
-                onMouseLeave={e => (e.currentTarget.style.borderColor = 'var(--border)')}
-              >
+                onMouseLeave={e => (e.currentTarget.style.borderColor = 'var(--border)')}>
                 "{ex}"
               </div>
             ))}
@@ -411,125 +465,124 @@ export default function OnboardingTour({ userId, onClose, preview = false }: Pro
     </>
   )
 
-  /* ─ Centered modal ─ */
+  /* ─ tryMode UI ─ */
+  const renderTryMode = (tm: TryMode) => (
+    <>
+      <div style={{ width: '100%', height: 4, background: 'var(--surface3)', borderRadius: 2, marginBottom: 6 }}>
+        <div style={{ height: '100%', width: `${progress}%`, background: 'var(--accent)', borderRadius: 2 }} />
+      </div>
+      <div style={{ fontSize: 11, color: 'var(--text3)', marginBottom: 14 }}>Krok {step + 1} z {STEPS.length}</div>
+      <div style={{ fontSize: 16, fontWeight: 700, color: 'var(--text)', marginBottom: 10, lineHeight: 1.4 }}>{tm.instruction}</div>
+      {tryTimedOut ? (
+        <button className="btn btn-primary btn-sm" onClick={handleNext}>Pokračovat →</button>
+      ) : (
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 6 }}>
+          <span style={{ fontSize: 12, color: 'var(--text3)', fontStyle: 'italic' }}>Čeká na tvoji akci…</span>
+          <button className="btn btn-ghost btn-sm" onClick={handleNext}>{tm.skipLabel ?? 'Přeskočit akci'}</button>
+        </div>
+      )}
+    </>
+  )
+
+  /* ─ Footer buttons ─ */
+  const renderFooter = () => (
+    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 16 }}>
+      <button onClick={handleClose} style={{ background: 'none', border: 'none', color: 'var(--text3)', fontSize: 12, cursor: 'pointer', textDecoration: 'underline', padding: 0 }}>
+        Přeskočit průvodce
+      </button>
+      <div style={{ display: 'flex', gap: 8 }}>
+        {step > 0 && <button className="btn btn-ghost btn-sm" onClick={handleBack}>← Zpět</button>}
+        <button className="btn btn-primary btn-sm" onClick={handleNext}>
+          {step === STEPS.length - 1 ? 'Dokončit' : 'Další →'}
+        </button>
+      </div>
+    </div>
+  )
+
+  const tooltipBase: React.CSSProperties = {
+    background: 'var(--bg2)',
+    border: '1.5px solid var(--accent)',
+    borderRadius: 16,
+    padding: '20px 24px',
+    minWidth: 400,
+    maxWidth: TW,
+    boxShadow: '0 16px 48px rgba(0,0,0,0.6)',
+    pointerEvents: 'all',
+    zIndex: 10000,
+  }
+
+  /* ─ CENTER modal ─ */
   if (current.position === 'center') {
     return (
-      <div style={{
-        position: 'fixed', inset: 0, zIndex: 99998,
-        background: 'rgba(0,0,0,0.8)',
-        display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20,
-      }}>
-        <div style={{
-          background: 'var(--surface2)', border: '1.5px solid var(--accent)',
-          borderRadius: 16, padding: '24px 28px',
-          maxWidth: 460, width: '100%',
-          boxShadow: '0 16px 48px rgba(0,0,0,0.5)', position: 'relative',
-        }}>
+      <div style={{ position: 'fixed', inset: 0, zIndex: 9998, background: BG, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}>
+        <div style={{ ...tooltipBase, position: 'relative', maxWidth: 460, width: '100%', zIndex: 10000 }}>
           {!current.welcomeOnly && (
             <button onClick={handleClose} style={{ position: 'absolute', top: 14, right: 16, background: 'none', border: 'none', color: 'var(--text3)', fontSize: 20, cursor: 'pointer', lineHeight: 1 }}>×</button>
           )}
           {renderBody()}
-
           {current.ctaButtons ? (
             <>
               <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', marginTop: 20 }}>
                 {current.ctaButtons.map(btn => (
                   <button key={btn.href} className={btn.primary ? 'btn btn-primary' : 'btn btn-outline'}
-                    style={btn.primary ? { flex: 1 } : { flex: 1 }}
+                    style={{ flex: 1 }}
                     onClick={() => { handleClose(); router.push(btn.href) }}>
                     {btn.label}
                   </button>
                 ))}
               </div>
-              {current.finishNote && (
-                <div style={{ fontSize: 12, color: 'var(--text3)', textAlign: 'center', marginTop: 12 }}>{current.finishNote}</div>
-              )}
+              {current.finishNote && <div style={{ fontSize: 12, color: 'var(--text3)', textAlign: 'center', marginTop: 12 }}>{current.finishNote}</div>}
             </>
           ) : current.welcomeOnly ? (
             <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 20 }}>
               <button className="btn btn-primary" onClick={handleNext}>Začít průvodce →</button>
             </div>
-          ) : (
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 16 }}>
-              <button onClick={handleClose} style={{ background: 'none', border: 'none', color: 'var(--text3)', fontSize: 12, cursor: 'pointer', textDecoration: 'underline', padding: 0 }}>Přeskočit</button>
-              <div style={{ display: 'flex', gap: 8 }}>
-                {step > 0 && <button className="btn btn-ghost btn-sm" onClick={handleBack}>← Zpět</button>}
-                <button className="btn btn-primary btn-sm" onClick={handleNext}>{step === STEPS.length - 1 ? 'Dokončit' : 'Další →'}</button>
-              </div>
-            </div>
-          )}
+          ) : renderFooter()}
         </div>
       </div>
     )
   }
 
-  /* ─ Spotlight (with target) ─ */
-  const hlRect = targetRect ?? null
-
-  const hlStyle: React.CSSProperties = hlRect ? {
-    position: 'fixed',
-    top: hlRect.top - PAD,
-    left: hlRect.left - PAD,
-    width: hlRect.width + PAD * 2,
-    height: hlRect.height + PAD * 2,
-    borderRadius: 8,
-    outline: '3px solid var(--accent)',
-    boxShadow: '0 0 0 6px rgba(224,32,32,0.3), 0 0 0 9999px rgba(0,0,0,0.8)',
-    zIndex: 99998,
-    pointerEvents: 'none',
-    transition: 'top 0.25s ease, left 0.25s ease, width 0.25s ease, height 0.25s ease',
-  } : {}
-
-  const adjustedRect: Rect | null = hlRect
-    ? { top: hlRect.top - PAD, left: hlRect.left - PAD, width: hlRect.width + PAD * 2, height: hlRect.height + PAD * 2 }
-    : null
-
-  const tooltipPos = adjustedRect
-    ? computeTooltipPos(adjustedRect, current.position)
-    : { top: '50%' as unknown as number, left: '50%' as unknown as number, transform: 'translate(-50%,-50%)' }
-
-  const arrowStyle = getArrowStyle(current.position)
+  /* ─ SPOTLIGHT mode ─ */
+  const inTryMode = !!current.tryMode
 
   return (
     <>
-      {/* Fallback bg when target not yet found */}
-      {!hlRect && <div style={{ position: 'fixed', inset: 0, zIndex: 99996, background: 'rgba(0,0,0,0.8)' }} />}
+      {/* ── 4-panel backdrop (creates a hole where target is) ── */}
+      {hl ? (
+        <>
+          <div style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: hl.top, background: BG, zIndex: 9998, pointerEvents: 'all' }} />
+          <div style={{ position: 'fixed', top: hl.top + hl.h, left: 0, width: '100vw', bottom: 0, background: BG, zIndex: 9998, pointerEvents: 'all' }} />
+          <div style={{ position: 'fixed', top: hl.top, left: 0, width: hl.left, height: hl.h, background: BG, zIndex: 9998, pointerEvents: 'all' }} />
+          <div style={{ position: 'fixed', top: hl.top, left: hl.left + hl.w, right: 0, height: hl.h, background: BG, zIndex: 9998, pointerEvents: 'all' }} />
+          {/* Highlight border — above backdrop, pointer-events none so target stays clickable */}
+          <div style={{
+            position: 'fixed', top: hl.top, left: hl.left, width: hl.w, height: hl.h,
+            borderRadius: 8, outline: '3px solid var(--accent)',
+            boxShadow: '0 0 0 4px rgba(224,32,32,0.25)',
+            zIndex: 9999, pointerEvents: 'none',
+            transition: 'top 0.2s ease, left 0.2s ease, width 0.2s ease, height 0.2s ease',
+          }} />
+        </>
+      ) : (
+        /* Full backdrop while target loads */
+        <>
+          <div style={{ position: 'fixed', inset: 0, background: BG, zIndex: 9998, pointerEvents: 'all' }} />
+          {/* Allow tooltip clicks through */}
+        </>
+      )}
 
-      {/* Click blocker */}
-      <div style={{ position: 'fixed', inset: 0, zIndex: 99997, cursor: 'default' }} onClick={e => e.stopPropagation()} />
-
-      {/* Spotlight */}
-      {hlRect && <div style={hlStyle} />}
-
-      {/* Tooltip */}
-      <div key={step} style={{
-        position: 'fixed', ...tooltipPos,
-        zIndex: 99999,
-        background: 'var(--surface2)',
-        border: '1.5px solid var(--accent)',
-        borderRadius: 16,
-        padding: '24px 28px',
-        minWidth: 400, maxWidth: 440,
-        boxShadow: '0 16px 48px rgba(0,0,0,0.5)',
-        pointerEvents: 'all',
-      }}>
+      {/* ── Tooltip ── */}
+      <div key={step} style={{ position: 'fixed', ...tooltipPos, ...tooltipBase } as React.CSSProperties}>
         {/* Arrow */}
-        {hlRect && <div style={arrowStyle} />}
+        {hl && <div style={arrowStyle} />}
 
-        {renderBody()}
-
-        {/* Footer */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 16 }}>
-          <button onClick={handleClose} style={{ background: 'none', border: 'none', color: 'var(--text3)', fontSize: 12, cursor: 'pointer', textDecoration: 'underline', padding: 0 }}>
-            Přeskočit
-          </button>
-          <div style={{ display: 'flex', gap: 8 }}>
-            {step > 0 && <button className="btn btn-ghost btn-sm" onClick={handleBack}>← Zpět</button>}
-            <button className="btn btn-primary btn-sm" onClick={handleNext}>
-              {step === STEPS.length - 1 ? 'Dokončit' : 'Další →'}
-            </button>
-          </div>
-        </div>
+        {inTryMode ? renderTryMode(current.tryMode!) : (
+          <>
+            {renderBody()}
+            {renderFooter()}
+          </>
+        )}
       </div>
     </>
   )
