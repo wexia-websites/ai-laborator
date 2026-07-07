@@ -6,9 +6,10 @@ import { markOnboardingComplete } from '@/lib/onboarding'
 /* ─── Types ─────────────────────────────────────────────── */
 type TryMode = {
   instruction: string
-  waitFor?: string       // CSS selector — advance when clicked
-  waitForRoute?: string  // advance when URL matches
-  timeoutMs?: number     // ms before showing "Pokračovat →" (default 30000)
+  waitFor?: string            // CSS selector — advance when clicked
+  waitForRoute?: string       // advance when URL matches
+  waitForMutation?: string    // CSS selector of container — advance when child added
+  timeoutMs?: number          // ms before showing "Pokračovat →" (default 30000)
   skipLabel?: string
 }
 
@@ -97,7 +98,7 @@ const STEPS: TourStep[] = [
     ],
     tryMode: {
       instruction: '✍️ Zkus napsat zprávu do chatu a odeslat ji',
-      waitFor: '[data-tour-id="chat-input"]',
+      waitForMutation: '.chat-messages',
       timeoutMs: 30000,
       skipLabel: 'Přeskočit',
     },
@@ -401,6 +402,25 @@ export default function OnboardingTour({ userId, onClose, preview = false }: Pro
     if (pathname === tm.waitForRoute) advanceRef.current()
   }, [pathname, step]) // eslint-disable-line react-hooks/exhaustive-deps
 
+  // tryMode: MutationObserver (detects new DOM children, e.g. chat messages)
+  useEffect(() => {
+    const tm = current.tryMode
+    if (!tm?.waitForMutation) return
+    const container = document.querySelector(tm.waitForMutation)
+    if (!container) return
+    const observer = new MutationObserver((mutations) => {
+      for (const m of mutations) {
+        if (m.type === 'childList' && m.addedNodes.length > 0) {
+          observer.disconnect()
+          advanceRef.current()
+          return
+        }
+      }
+    })
+    observer.observe(container, { childList: true })
+    return () => observer.disconnect()
+  }, [step]) // eslint-disable-line react-hooks/exhaustive-deps
+
   // tryMode: timeout
   useEffect(() => {
     const tm = current.tryMode
@@ -551,10 +571,10 @@ export default function OnboardingTour({ userId, onClose, preview = false }: Pro
       {/* ── 4-panel backdrop (creates a hole where target is) ── */}
       {hl ? (
         <>
-          <div style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: hl.top, background: BG, zIndex: 9998, pointerEvents: 'all' }} />
-          <div style={{ position: 'fixed', top: hl.top + hl.h, left: 0, width: '100vw', bottom: 0, background: BG, zIndex: 9998, pointerEvents: 'all' }} />
-          <div style={{ position: 'fixed', top: hl.top, left: 0, width: hl.left, height: hl.h, background: BG, zIndex: 9998, pointerEvents: 'all' }} />
-          <div style={{ position: 'fixed', top: hl.top, left: hl.left + hl.w, right: 0, height: hl.h, background: BG, zIndex: 9998, pointerEvents: 'all' }} />
+          <div style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: hl.top, background: BG, zIndex: 9998, pointerEvents: 'none' }} />
+          <div style={{ position: 'fixed', top: hl.top + hl.h, left: 0, width: '100vw', bottom: 0, background: BG, zIndex: 9998, pointerEvents: 'none' }} />
+          <div style={{ position: 'fixed', top: hl.top, left: 0, width: hl.left, height: hl.h, background: BG, zIndex: 9998, pointerEvents: 'none' }} />
+          <div style={{ position: 'fixed', top: hl.top, left: hl.left + hl.w, right: 0, height: hl.h, background: BG, zIndex: 9998, pointerEvents: 'none' }} />
           {/* Highlight border — above backdrop, pointer-events none so target stays clickable */}
           <div style={{
             position: 'fixed', top: hl.top, left: hl.left, width: hl.w, height: hl.h,
@@ -567,7 +587,7 @@ export default function OnboardingTour({ userId, onClose, preview = false }: Pro
       ) : (
         /* Full backdrop while target loads */
         <>
-          <div style={{ position: 'fixed', inset: 0, background: BG, zIndex: 9998, pointerEvents: 'all' }} />
+          <div style={{ position: 'fixed', inset: 0, background: BG, zIndex: 9998, pointerEvents: 'none' }} />
           {/* Allow tooltip clicks through */}
         </>
       )}
