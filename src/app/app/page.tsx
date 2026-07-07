@@ -106,12 +106,12 @@ export default function Dashboard() {
         ...(ucData ?? []).map((r: Record<string, string>) => ({
           id: r.id, type: 'usecase' as const,
           title: r.title ?? '—', author: r.author_name ?? '—',
-          updatedAt: r.updated_at, href: '/app/usecases',
+          updatedAt: r.updated_at, href: `/app/usecases?id=${r.id}`,
         })),
         ...(projData ?? []).map((r: Record<string, string>) => ({
           id: r.id, type: 'project' as const,
           title: r.title ?? '—', author: r.author_name ?? '—',
-          updatedAt: r.updated_at, href: '/app/projects',
+          updatedAt: r.updated_at, href: `/app/projects?id=${r.id}`,
         })),
       ]
         .sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime())

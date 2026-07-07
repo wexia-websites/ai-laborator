@@ -35,6 +35,7 @@ function UseCasesContent() {
   const searchParams = useSearchParams()
   const filterParam = searchParams.get('filter')
   const tabParam = searchParams.get('tab')
+  const idParam = searchParams.get('id')
 
   const { role, canEdit } = useRole()
   const isViewer = role === 'viewer'
@@ -60,6 +61,12 @@ function UseCasesContent() {
   }
 
   useEffect(() => { load() }, [])  // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => {
+    if (idParam && usecases.length > 0 && !selected) {
+      const found = usecases.find(u => u.id === idParam)
+      if (found) setSelected(found)
+    }
+  }, [idParam, usecases]) // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => {
     supabase.auth.getUser().then(({ data: { user } }: any) => setCurrentUserId(user?.id ?? null))
   }, [])

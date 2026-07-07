@@ -1,6 +1,7 @@
 'use client'
-import { useEffect, useState } from 'react'
+import { useEffect, useState, Suspense } from 'react'
 import { useRouter } from 'next/navigation'
+import { useSearchParams } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import { useRole } from '@/lib/useRole'
 
@@ -60,8 +61,10 @@ function Field({ label, value }: { label: string; value?: string | number | null
   )
 }
 
-export default function ProjectsPage() {
+function ProjectsContent() {
   const router = useRouter()
+  const searchParams = useSearchParams()
+  const idParam = searchParams.get('id')
   const { canAccess, canEdit, loading: roleLoading } = useRole()
   useEffect(() => {
     if (!roleLoading && !canAccess('projects')) router.push('/app/chat')
@@ -84,6 +87,12 @@ export default function ProjectsPage() {
   }
 
   useEffect(() => { load() }, [])  // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => {
+    if (idParam && projects.length > 0 && !selected) {
+      const found = projects.find(p => p.id === idParam)
+      if (found) setSelected(found)
+    }
+  }, [idParam, projects]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const f = (key: keyof typeof EMPTY_FORM) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) =>
     setForm(prev => ({ ...prev, [key]: e.target.value }))
@@ -736,4 +745,8 @@ export default function ProjectsPage() {
       )}
     </>
   )
+}
+
+export default function ProjectsPage() {
+  return <Suspense><ProjectsContent /></Suspense>
 }
