@@ -379,10 +379,10 @@ export default function OnboardingTour({ onComplete }: Props) {
               Otevřít Chat →
             </button>
             <button onClick={() => { removeHighlight(); onComplete(); router.push('/app') }}
-              style={{ padding: '10px', borderRadius: 8, border: '1.5px solid var(--border2)', background: 'transparent', color: 'var(--text)', cursor: 'pointer', fontSize: 13 }}>
+              style={{ padding: '10px', borderRadius: 8, border: '1.5px solid var(--border-strong)', background: 'transparent', color: 'var(--text-primary)', cursor: 'pointer', fontSize: 13 }}>
               Přejít na Dashboard
             </button>
-            <div style={{ fontSize: 11, color: 'var(--text3)', textAlign: 'center', marginTop: 2 }}>
+            <div style={{ fontSize: 11, color: 'var(--text-muted)', textAlign: 'center', marginTop: 2 }}>
               Průvodce kdykoliv spustíš znovu přes "Průvodce" v menu.
             </div>
           </div>
@@ -398,7 +398,7 @@ export default function OnboardingTour({ onComplete }: Props) {
           flexShrink: 0,
         }}>
           <button onClick={skipAll} style={{
-            fontSize: 12, color: 'var(--text3)', background: 'none',
+            fontSize: 12, color: 'var(--text-muted)', background: 'none',
             border: 'none', cursor: 'pointer', textDecoration: 'underline',
           }}>
             Přeskočit
@@ -407,8 +407,8 @@ export default function OnboardingTour({ onComplete }: Props) {
             {!isFirst && (
               <button onClick={goBack} style={{
                 padding: '6px 12px', borderRadius: 7,
-                border: '1px solid var(--border2)', background: 'transparent',
-                color: 'var(--text2)', cursor: 'pointer', fontSize: 13,
+                border: '1px solid var(--border-strong)', background: 'transparent',
+                color: 'var(--text-secondary)', cursor: 'pointer', fontSize: 13,
               }}>
                 ← Zpět
               </button>
