@@ -647,7 +647,7 @@ export default function OnboardingTour({ onComplete }: Props) {
     const base: React.CSSProperties = {
       position: 'fixed',
       width: 380,
-      background: 'var(--surface-2)',
+      background: 'var(--surface2, #1a1a2e)',
       border: '1.5px solid var(--accent)',
       borderRadius: 14,
       boxShadow: '0 12px 40px rgba(0,0,0,0.5)',
@@ -720,7 +720,7 @@ export default function OnboardingTour({ onComplete }: Props) {
           style={{
             padding: '10px 20px 0',
             fontSize: 11,
-            color: 'var(--text-muted)',
+            color: 'var(--text3)',
             fontWeight: 600,
             textTransform: 'uppercase',
             letterSpacing: '0.5px',
@@ -736,7 +736,7 @@ export default function OnboardingTour({ onComplete }: Props) {
             style={{
               fontSize: 18,
               fontWeight: 700,
-              color: 'var(--text-primary)',
+              color: 'var(--text)',
               lineHeight: 1.3,
               marginBottom: 8,
             }}
@@ -748,7 +748,7 @@ export default function OnboardingTour({ onComplete }: Props) {
           <div
             style={{
               fontSize: 13,
-              color: 'var(--text-secondary)',
+              color: 'var(--text2)',
               lineHeight: 1.6,
               marginBottom: step.bullets ? 8 : 0,
             }}
@@ -766,7 +766,7 @@ export default function OnboardingTour({ onComplete }: Props) {
                     display: 'flex',
                     gap: 7,
                     fontSize: 12,
-                    color: 'var(--text-secondary)',
+                    color: 'var(--text2)',
                     lineHeight: 1.45,
                   }}
                 >
@@ -783,13 +783,13 @@ export default function OnboardingTour({ onComplete }: Props) {
           {step.tip && (
             <div
               style={{
-                background: 'var(--surface-1)',
+                background: 'var(--surface)',
                 borderLeft: '3px solid var(--accent)',
                 borderRadius: '0 6px 6px 0',
                 margin: '8px 0',
                 padding: '8px 10px',
                 fontSize: 12,
-                color: 'var(--text-secondary)',
+                color: 'var(--text2)',
                 fontStyle: 'italic',
                 lineHeight: 1.5,
               }}
@@ -808,7 +808,7 @@ export default function OnboardingTour({ onComplete }: Props) {
                 padding: '10px 12px',
                 margin: '12px 0',
                 fontSize: 13,
-                color: 'var(--text-primary)',
+                color: 'var(--text)',
                 fontWeight: 600,
               }}
             >
@@ -849,9 +849,9 @@ export default function OnboardingTour({ onComplete }: Props) {
                 style={{
                   padding: '10px',
                   borderRadius: 8,
-                  border: '1.5px solid var(--border-strong)',
+                  border: '1.5px solid var(--border2)',
                   background: 'transparent',
-                  color: 'var(--text-primary)',
+                  color: 'var(--text)',
                   cursor: 'pointer',
                   fontSize: 13,
                 }}
@@ -861,7 +861,7 @@ export default function OnboardingTour({ onComplete }: Props) {
               <div
                 style={{
                   fontSize: 11,
-                  color: 'var(--text-muted)',
+                  color: 'var(--text3)',
                   textAlign: 'center',
                   marginTop: 4,
                 }}
@@ -888,7 +888,7 @@ export default function OnboardingTour({ onComplete }: Props) {
               onClick={skipAll}
               style={{
                 fontSize: 11,
-                color: 'var(--text-muted)',
+                color: 'var(--text3)',
                 background: 'none',
                 border: 'none',
                 cursor: 'pointer',
@@ -905,9 +905,9 @@ export default function OnboardingTour({ onComplete }: Props) {
                   style={{
                     padding: '6px 12px',
                     borderRadius: 7,
-                    border: '1px solid var(--border-strong)',
+                    border: '1px solid var(--border2)',
                     background: 'transparent',
-                    color: 'var(--text-secondary)',
+                    color: 'var(--text2)',
                     cursor: 'pointer',
                     fontSize: 13,
                   }}
@@ -922,9 +922,9 @@ export default function OnboardingTour({ onComplete }: Props) {
                   style={{
                     padding: '6px 14px',
                     borderRadius: 7,
-                    border: '1px solid var(--border-strong)',
+                    border: '1px solid var(--border2)',
                     background: 'transparent',
-                    color: 'var(--text-secondary)',
+                    color: 'var(--text2)',
                     cursor: 'pointer',
                     fontSize: 13,
                   }}
