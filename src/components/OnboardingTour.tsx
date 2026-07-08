@@ -324,10 +324,10 @@ export default function OnboardingTour({ onComplete }: Props) {
 
   const applyHighlight = useCallback((el: HTMLElement) => {
     removeHighlight()
-    el.style.outline = '3px solid #C0392B'
-    el.style.outlineOffset = '4px'
-    el.style.borderRadius = '8px'
-    el.style.boxShadow = '0 0 0 6px rgba(192,57,43,0.2)'
+    el.style.outline = '2px solid #C0392B'
+    el.style.outlineOffset = '3px'
+    el.style.borderRadius = '6px'
+    el.style.boxShadow = '0 0 0 4px rgba(192,57,43,0.2)'
     el.style.position = 'relative'
     el.style.zIndex = '9999'
     el.style.transition = 'all 0.2s ease'
@@ -338,7 +338,7 @@ export default function OnboardingTour({ onComplete }: Props) {
   /* ── Tooltip Positioning ── */
   const positionTooltip = useCallback((targetEl: HTMLElement, position: TourStep['position']) => {
     const rect = targetEl.getBoundingClientRect()
-    const tooltipWidth = 380
+    const tooltipWidth = 360
     const tooltipHeight = 500 // estimated max
     const margin = 16
 
@@ -605,38 +605,38 @@ export default function OnboardingTour({ onComplete }: Props) {
       case 'right':
         return {
           ...base,
-          left: -10,
+          left: -8,
           top: '50%',
           transform: 'translateY(-50%)',
-          borderWidth: '10px 10px 10px 0',
-          borderColor: 'transparent #C0392B transparent transparent',
+          borderWidth: '8px 8px 8px 0',
+          borderColor: 'transparent #16162a transparent transparent',
         }
       case 'left':
         return {
           ...base,
-          right: -10,
+          right: -8,
           top: '50%',
           transform: 'translateY(-50%)',
-          borderWidth: '10px 0 10px 10px',
-          borderColor: 'transparent transparent transparent #C0392B',
+          borderWidth: '8px 0 8px 8px',
+          borderColor: 'transparent transparent transparent #16162a',
         }
       case 'top':
         return {
           ...base,
           left: '50%',
-          bottom: -10,
+          bottom: -8,
           transform: 'translateX(-50%)',
-          borderWidth: '10px 10px 0 10px',
-          borderColor: '#C0392B transparent transparent transparent',
+          borderWidth: '8px 8px 0 8px',
+          borderColor: '#16162a transparent transparent transparent',
         }
       case 'bottom':
         return {
           ...base,
           left: '50%',
-          top: -10,
+          top: -8,
           transform: 'translateX(-50%)',
-          borderWidth: '0 10px 10px 10px',
-          borderColor: 'transparent transparent #C0392B transparent',
+          borderWidth: '0 8px 8px 8px',
+          borderColor: 'transparent transparent #16162a transparent',
         }
       default:
         return null
@@ -647,15 +647,17 @@ export default function OnboardingTour({ onComplete }: Props) {
   const tooltipStyle: React.CSSProperties = useMemo(() => {
     const base: React.CSSProperties = {
       position: 'fixed',
-      width: 380,
-      background: '#1e1e2e',
-      border: '1.5px solid #C0392B',
-      borderRadius: 14,
-      boxShadow: '0 12px 40px rgba(0,0,0,0.5)',
+      width: 360,
+      background: '#16162a',
+      border: 'none',
+      borderRadius: 16,
+      boxShadow: '0 0 0 1px rgba(255,255,255,0.08), 0 24px 64px rgba(0,0,0,0.7)',
       zIndex: 10000,
       pointerEvents: 'all',
       opacity: fading ? 0 : 1,
       transition: 'opacity 0.15s ease',
+      overflow: 'hidden',
+      padding: 0,
     }
 
     if (tooltipPos.center) {
@@ -687,7 +689,7 @@ export default function OnboardingTour({ onComplete }: Props) {
           left: 0,
           right: 0,
           bottom: 0,
-          background: 'rgba(0,0,0,0.35)',
+          background: 'rgba(0,0,0,0.4)',
           zIndex: 9998,
           pointerEvents: 'none',
         }}
@@ -698,44 +700,55 @@ export default function OnboardingTour({ onComplete }: Props) {
         {/* Arrow */}
         {arrowStyle && <div style={arrowStyle} />}
 
-        {/* Progress bar */}
+        {/* Header pruh */}
         <div
           style={{
-            height: 4,
-            background: '#333355',
-            borderRadius: '14px 14px 0 0',
+            background: '#C0392B',
+            padding: '10px 18px',
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
           }}
         >
+          {/* Tečky progress (vlevo) */}
+          <div style={{ display: 'flex', gap: 5 }}>
+            {Array.from({ length: total }).map((_, i) => (
+              <div
+                key={i}
+                style={{
+                  width: 7,
+                  height: 7,
+                  borderRadius: '50%',
+                  background: i <= stepIndex ? '#ffffff' : 'rgba(255,255,255,0.3)',
+                  transition: 'background 0.3s ease',
+                }}
+              />
+            ))}
+          </div>
+          {/* X z Y (vpravo) */}
+          <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.7)', fontWeight: 500 }}>
+            {stepIndex + 1} z {total}
+          </div>
+        </div>
+
+        {/* Progress bar */}
+        <div style={{ height: 2, background: 'rgba(255,255,255,0.1)' }}>
           <div
             style={{
               height: '100%',
               width: `${progress}%`,
-              background: '#C0392B',
-              transition: 'width 0.3s ease',
+              background: 'rgba(255,255,255,0.9)',
+              transition: 'width 0.4s ease',
             }}
           />
         </div>
 
-        {/* Header */}
-        <div
-          style={{
-            padding: '10px 20px 0',
-            fontSize: 11,
-            color: '#707080',
-            fontWeight: 600,
-            textTransform: 'uppercase',
-            letterSpacing: '0.5px',
-          }}
-        >
-          Krok {stepIndex + 1} z {total}
-        </div>
-
         {/* Body */}
-        <div style={{ padding: '6px 20px 0' }}>
+        <div style={{ padding: '18px 20px 16px' }}>
           {/* Title */}
           <div
             style={{
-              fontSize: 18,
+              fontSize: 16,
               fontWeight: 700,
               color: '#ffffff',
               lineHeight: 1.3,
@@ -749,9 +762,9 @@ export default function OnboardingTour({ onComplete }: Props) {
           <div
             style={{
               fontSize: 13,
-              color: '#b0b0c0',
-              lineHeight: 1.6,
-              marginBottom: step.bullets ? 8 : 0,
+              color: 'rgba(255,255,255,0.65)',
+              lineHeight: 1.55,
+              marginBottom: step.bullets ? 10 : 0,
             }}
           >
             {step.description}
@@ -759,21 +772,28 @@ export default function OnboardingTour({ onComplete }: Props) {
 
           {/* Bullets */}
           {step.bullets && (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 4, marginBottom: 8 }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 5, marginBottom: 10 }}>
               {step.bullets.map((b, i) => (
                 <div
                   key={i}
                   style={{
                     display: 'flex',
-                    gap: 7,
+                    gap: 8,
                     fontSize: 12,
-                    color: '#b0b0c0',
-                    lineHeight: 1.45,
+                    color: 'rgba(255,255,255,0.6)',
+                    lineHeight: 1.4,
                   }}
                 >
-                  <span style={{ color: '#C0392B', flexShrink: 0, fontWeight: 700 }}>
-                    •
-                  </span>
+                  <div
+                    style={{
+                      width: 5,
+                      height: 5,
+                      borderRadius: '50%',
+                      background: '#C0392B',
+                      marginTop: 6,
+                      flexShrink: 0,
+                    }}
+                  />
                   <span>{b}</span>
                 </div>
               ))}
@@ -784,18 +804,17 @@ export default function OnboardingTour({ onComplete }: Props) {
           {step.tip && (
             <div
               style={{
-                background: '#2a2a3e',
-                borderLeft: '3px solid #C0392B',
-                borderRadius: '0 6px 6px 0',
-                margin: '8px 0',
-                padding: '8px 10px',
+                background: 'rgba(255,255,255,0.05)',
+                borderRadius: 8,
+                padding: '8px 12px',
+                marginBottom: 10,
                 fontSize: 12,
-                color: '#b0b0c0',
+                color: 'rgba(255,255,255,0.5)',
                 fontStyle: 'italic',
                 lineHeight: 1.5,
               }}
             >
-              💡 {step.tip}
+              {step.tip}
             </div>
           )}
 
@@ -803,93 +822,53 @@ export default function OnboardingTour({ onComplete }: Props) {
           {showTryInstruction && (
             <div
               style={{
-                background: 'rgba(192,57,43,0.1)',
-                border: '1px solid #C0392B',
+                background: 'rgba(192,57,43,0.15)',
+                border: '1px solid rgba(192,57,43,0.4)',
                 borderRadius: 8,
-                padding: '10px 12px',
-                margin: '12px 0',
-                fontSize: 13,
-                color: '#ffffff',
-                fontWeight: 600,
+                padding: '8px 12px',
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                marginBottom: 10,
               }}
             >
-              {step.tryMode!.instruction}
+              <span style={{ fontSize: 12, color: 'rgba(255,255,255,0.8)' }}>
+                {step.tryMode!.instruction}
+              </span>
+              <button
+                onClick={skipTryMode}
+                style={{
+                  fontSize: 11,
+                  color: 'rgba(255,255,255,0.4)',
+                  background: 'none',
+                  border: 'none',
+                  cursor: 'pointer',
+                  textDecoration: 'underline',
+                }}
+              >
+                Přeskočit
+              </button>
             </div>
           )}
 
-          {/* Finish CTAs */}
-          {isLast && (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 8, margin: '16px 0 12px' }}>
-              <button
-                onClick={() => {
-                  removeHighlight()
-                  cleanupTryMode()
-                  onComplete()
-                  router.push('/app/chat')
-                }}
-                style={{
-                  padding: '12px',
-                  borderRadius: 8,
-                  border: 'none',
-                  background: '#C0392B',
-                  color: '#ffffff',
-                  fontWeight: 700,
-                  cursor: 'pointer',
-                  fontSize: 14,
-                }}
-              >
-                Otevřít Chat →
-              </button>
-              <button
-                onClick={() => {
-                  removeHighlight()
-                  cleanupTryMode()
-                  onComplete()
-                  router.push('/app')
-                }}
-                style={{
-                  padding: '10px',
-                  borderRadius: 8,
-                  border: '1.5px solid #444466',
-                  background: 'transparent',
-                  color: '#ffffff',
-                  cursor: 'pointer',
-                  fontSize: 13,
-                }}
-              >
-                Přejít na Dashboard
-              </button>
-              <div
-                style={{
-                  fontSize: 11,
-                  color: '#707080',
-                  textAlign: 'center',
-                  marginTop: 4,
-                }}
-              >
-                Průvodce spustíš znovu přes Průvodce v menu
-              </div>
-            </div>
-          )}
         </div>
 
         {/* Footer */}
-        {!isLast && (
+        {!isLast ? (
           <div
             style={{
-              padding: '12px 20px',
-              borderTop: '1px solid #333355',
+              padding: '10px 20px 14px',
+              borderTop: '1px solid rgba(255,255,255,0.06)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'space-between',
-              marginTop: 8,
             }}
           >
             <button
               onClick={skipAll}
               style={{
                 fontSize: 11,
-                color: '#707080',
+                color: 'rgba(255,255,255,0.3)',
                 background: 'none',
                 border: 'none',
                 cursor: 'pointer',
@@ -899,56 +878,94 @@ export default function OnboardingTour({ onComplete }: Props) {
               Přeskočit průvodce
             </button>
 
-            <div style={{ display: 'flex', gap: 6 }}>
+            <div style={{ display: 'flex', gap: 8 }}>
               {!isFirst && (
                 <button
                   onClick={prevStep}
                   style={{
-                    padding: '6px 12px',
-                    borderRadius: 7,
-                    border: '1px solid #444466',
-                    background: 'transparent',
-                    color: '#b0b0c0',
-                    cursor: 'pointer',
+                    background: 'rgba(255,255,255,0.07)',
+                    border: '1px solid rgba(255,255,255,0.12)',
+                    borderRadius: 8,
+                    padding: '7px 14px',
+                    color: 'rgba(255,255,255,0.7)',
                     fontSize: 13,
+                    cursor: 'pointer',
                   }}
                 >
                   ← Zpět
                 </button>
               )}
 
-              {showTryInstruction ? (
-                <button
-                  onClick={skipTryMode}
-                  style={{
-                    padding: '6px 14px',
-                    borderRadius: 7,
-                    border: '1px solid #444466',
-                    background: 'transparent',
-                    color: '#b0b0c0',
-                    cursor: 'pointer',
-                    fontSize: 13,
-                  }}
-                >
-                  {step.tryMode!.skipLabel}
-                </button>
-              ) : (
-                <button
-                  onClick={nextStep}
-                  style={{
-                    padding: '6px 14px',
-                    borderRadius: 7,
-                    border: 'none',
-                    background: '#C0392B',
-                    color: '#ffffff',
-                    fontWeight: 600,
-                    cursor: 'pointer',
-                    fontSize: 13,
-                  }}
-                >
-                  {isFirst ? 'Začít →' : 'Další →'}
-                </button>
-              )}
+              <button
+                onClick={nextStep}
+                style={{
+                  background: '#C0392B',
+                  border: 'none',
+                  borderRadius: 8,
+                  padding: '7px 16px',
+                  color: 'white',
+                  fontSize: 13,
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                }}
+              >
+                {isFirst ? 'Začít →' : 'Další →'}
+              </button>
+            </div>
+          </div>
+        ) : (
+          <div style={{ padding: '14px 20px' }}>
+            <button
+              onClick={() => {
+                removeHighlight()
+                cleanupTryMode()
+                onComplete()
+                router.push('/app/chat')
+              }}
+              style={{
+                background: '#C0392B',
+                border: 'none',
+                borderRadius: 8,
+                padding: 10,
+                color: 'white',
+                fontWeight: 700,
+                fontSize: 14,
+                width: '100%',
+                marginBottom: 8,
+                cursor: 'pointer',
+              }}
+            >
+              Otevřít Chat →
+            </button>
+            <button
+              onClick={() => {
+                removeHighlight()
+                cleanupTryMode()
+                onComplete()
+                router.push('/app')
+              }}
+              style={{
+                background: 'rgba(255,255,255,0.07)',
+                border: '1px solid rgba(255,255,255,0.12)',
+                borderRadius: 8,
+                padding: 10,
+                color: 'rgba(255,255,255,0.8)',
+                fontSize: 13,
+                width: '100%',
+                cursor: 'pointer',
+                marginBottom: 10,
+              }}
+            >
+              Přejít na Dashboard
+            </button>
+            <div
+              style={{
+                fontSize: 11,
+                color: 'rgba(255,255,255,0.25)',
+                textAlign: 'center',
+              }}
+            >
+              Průvodce spustíš znovu přes Průvodce v menu
             </div>
           </div>
         )}
