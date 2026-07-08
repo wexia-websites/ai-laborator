@@ -180,7 +180,7 @@ const STEPS: TourStep[] = [
       skipLabel: 'Přeskočit',
     },
   },
-  // 9. Nový use case
+  // 9. Nový use case — BEZ tryMode (uživatel může kliknout a jít do chatu)
   {
     id: 'new-usecase',
     position: 'bottom',
@@ -194,6 +194,7 @@ const STEPS: TourStep[] = [
       'Obojí vytvoří draft čekající na revizi',
     ],
     tip: 'Doporučujeme Chat — AI ti pomůže formulovat vše správně.',
+    // ŽÁDNÝ tryMode — uživatel může kliknout a jít do chatu, průvodce nesmí blokovat
   },
   // 10. Projekty
   {
@@ -323,7 +324,7 @@ export default function OnboardingTour({ onComplete }: Props) {
 
   const applyHighlight = useCallback((el: HTMLElement) => {
     removeHighlight()
-    el.style.outline = '3px solid var(--accent)'
+    el.style.outline = '3px solid #C0392B'
     el.style.outlineOffset = '4px'
     el.style.borderRadius = '8px'
     el.style.boxShadow = '0 0 0 6px rgba(192,57,43,0.2)'
@@ -608,7 +609,7 @@ export default function OnboardingTour({ onComplete }: Props) {
           top: '50%',
           transform: 'translateY(-50%)',
           borderWidth: '10px 10px 10px 0',
-          borderColor: 'transparent var(--accent) transparent transparent',
+          borderColor: 'transparent #C0392B transparent transparent',
         }
       case 'left':
         return {
@@ -617,7 +618,7 @@ export default function OnboardingTour({ onComplete }: Props) {
           top: '50%',
           transform: 'translateY(-50%)',
           borderWidth: '10px 0 10px 10px',
-          borderColor: 'transparent transparent transparent var(--accent)',
+          borderColor: 'transparent transparent transparent #C0392B',
         }
       case 'top':
         return {
@@ -626,7 +627,7 @@ export default function OnboardingTour({ onComplete }: Props) {
           bottom: -10,
           transform: 'translateX(-50%)',
           borderWidth: '10px 10px 0 10px',
-          borderColor: 'var(--accent) transparent transparent transparent',
+          borderColor: '#C0392B transparent transparent transparent',
         }
       case 'bottom':
         return {
@@ -635,7 +636,7 @@ export default function OnboardingTour({ onComplete }: Props) {
           top: -10,
           transform: 'translateX(-50%)',
           borderWidth: '0 10px 10px 10px',
-          borderColor: 'transparent transparent var(--accent) transparent',
+          borderColor: 'transparent transparent #C0392B transparent',
         }
       default:
         return null
@@ -647,8 +648,8 @@ export default function OnboardingTour({ onComplete }: Props) {
     const base: React.CSSProperties = {
       position: 'fixed',
       width: 380,
-      background: 'var(--surface2, #1a1a2e)',
-      border: '1.5px solid var(--accent)',
+      background: '#1e1e2e',
+      border: '1.5px solid #C0392B',
       borderRadius: 14,
       boxShadow: '0 12px 40px rgba(0,0,0,0.5)',
       zIndex: 10000,
@@ -701,7 +702,7 @@ export default function OnboardingTour({ onComplete }: Props) {
         <div
           style={{
             height: 4,
-            background: 'rgba(192,57,43,0.2)',
+            background: '#333355',
             borderRadius: '14px 14px 0 0',
           }}
         >
@@ -709,7 +710,7 @@ export default function OnboardingTour({ onComplete }: Props) {
             style={{
               height: '100%',
               width: `${progress}%`,
-              background: 'var(--accent)',
+              background: '#C0392B',
               transition: 'width 0.3s ease',
             }}
           />
@@ -720,7 +721,7 @@ export default function OnboardingTour({ onComplete }: Props) {
           style={{
             padding: '10px 20px 0',
             fontSize: 11,
-            color: 'var(--text3)',
+            color: '#707080',
             fontWeight: 600,
             textTransform: 'uppercase',
             letterSpacing: '0.5px',
@@ -736,7 +737,7 @@ export default function OnboardingTour({ onComplete }: Props) {
             style={{
               fontSize: 18,
               fontWeight: 700,
-              color: 'var(--text)',
+              color: '#ffffff',
               lineHeight: 1.3,
               marginBottom: 8,
             }}
@@ -748,7 +749,7 @@ export default function OnboardingTour({ onComplete }: Props) {
           <div
             style={{
               fontSize: 13,
-              color: 'var(--text2)',
+              color: '#b0b0c0',
               lineHeight: 1.6,
               marginBottom: step.bullets ? 8 : 0,
             }}
@@ -766,11 +767,11 @@ export default function OnboardingTour({ onComplete }: Props) {
                     display: 'flex',
                     gap: 7,
                     fontSize: 12,
-                    color: 'var(--text2)',
+                    color: '#b0b0c0',
                     lineHeight: 1.45,
                   }}
                 >
-                  <span style={{ color: 'var(--accent)', flexShrink: 0, fontWeight: 700 }}>
+                  <span style={{ color: '#C0392B', flexShrink: 0, fontWeight: 700 }}>
                     •
                   </span>
                   <span>{b}</span>
@@ -783,13 +784,13 @@ export default function OnboardingTour({ onComplete }: Props) {
           {step.tip && (
             <div
               style={{
-                background: 'var(--surface)',
-                borderLeft: '3px solid var(--accent)',
+                background: '#2a2a3e',
+                borderLeft: '3px solid #C0392B',
                 borderRadius: '0 6px 6px 0',
                 margin: '8px 0',
                 padding: '8px 10px',
                 fontSize: 12,
-                color: 'var(--text2)',
+                color: '#b0b0c0',
                 fontStyle: 'italic',
                 lineHeight: 1.5,
               }}
@@ -803,12 +804,12 @@ export default function OnboardingTour({ onComplete }: Props) {
             <div
               style={{
                 background: 'rgba(192,57,43,0.1)',
-                border: '1px solid var(--accent)',
+                border: '1px solid #C0392B',
                 borderRadius: 8,
                 padding: '10px 12px',
                 margin: '12px 0',
                 fontSize: 13,
-                color: 'var(--text)',
+                color: '#ffffff',
                 fontWeight: 600,
               }}
             >
@@ -830,8 +831,8 @@ export default function OnboardingTour({ onComplete }: Props) {
                   padding: '12px',
                   borderRadius: 8,
                   border: 'none',
-                  background: 'var(--accent)',
-                  color: '#fff',
+                  background: '#C0392B',
+                  color: '#ffffff',
                   fontWeight: 700,
                   cursor: 'pointer',
                   fontSize: 14,
@@ -849,9 +850,9 @@ export default function OnboardingTour({ onComplete }: Props) {
                 style={{
                   padding: '10px',
                   borderRadius: 8,
-                  border: '1.5px solid var(--border2)',
+                  border: '1.5px solid #444466',
                   background: 'transparent',
-                  color: 'var(--text)',
+                  color: '#ffffff',
                   cursor: 'pointer',
                   fontSize: 13,
                 }}
@@ -861,7 +862,7 @@ export default function OnboardingTour({ onComplete }: Props) {
               <div
                 style={{
                   fontSize: 11,
-                  color: 'var(--text3)',
+                  color: '#707080',
                   textAlign: 'center',
                   marginTop: 4,
                 }}
@@ -877,7 +878,7 @@ export default function OnboardingTour({ onComplete }: Props) {
           <div
             style={{
               padding: '12px 20px',
-              borderTop: '1px solid var(--border)',
+              borderTop: '1px solid #333355',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'space-between',
@@ -888,7 +889,7 @@ export default function OnboardingTour({ onComplete }: Props) {
               onClick={skipAll}
               style={{
                 fontSize: 11,
-                color: 'var(--text3)',
+                color: '#707080',
                 background: 'none',
                 border: 'none',
                 cursor: 'pointer',
@@ -905,9 +906,9 @@ export default function OnboardingTour({ onComplete }: Props) {
                   style={{
                     padding: '6px 12px',
                     borderRadius: 7,
-                    border: '1px solid var(--border2)',
+                    border: '1px solid #444466',
                     background: 'transparent',
-                    color: 'var(--text2)',
+                    color: '#b0b0c0',
                     cursor: 'pointer',
                     fontSize: 13,
                   }}
@@ -922,9 +923,9 @@ export default function OnboardingTour({ onComplete }: Props) {
                   style={{
                     padding: '6px 14px',
                     borderRadius: 7,
-                    border: '1px solid var(--border2)',
+                    border: '1px solid #444466',
                     background: 'transparent',
-                    color: 'var(--text2)',
+                    color: '#b0b0c0',
                     cursor: 'pointer',
                     fontSize: 13,
                   }}
@@ -938,8 +939,8 @@ export default function OnboardingTour({ onComplete }: Props) {
                     padding: '6px 14px',
                     borderRadius: 7,
                     border: 'none',
-                    background: 'var(--accent)',
-                    color: '#fff',
+                    background: '#C0392B',
+                    color: '#ffffff',
                     fontWeight: 600,
                     cursor: 'pointer',
                     fontSize: 13,
